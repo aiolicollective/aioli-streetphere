@@ -1,1 +1,2 @@
-cmVxdWVzdHM9PTIuMzEuMApQaWxsb3c9PTEwLjMuMA==
+requests==2.31.0
+Pillow==10.3.0
