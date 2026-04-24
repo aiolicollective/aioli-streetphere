@@ -1,1 +1,413 @@
-IyEvdXNyL2Jpbi9lbnYgcHl0aG9uMwoiIiIKc3RyZWV0dmlldy5weSAgLS0gIEdvb2dsZSBTdHJlZXQgVmlldyBQYW5vcmFtYSBEb3dubG9hZGVyCj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQpBY2NlcHRlIHVuZSBVUkwgR29vZ2xlIE1hcHMgb3UgdW4gcGFub0lEIGJydXQuCkRldGVjdGUgYXV0b21hdGlxdWVtZW50IGxlIHR5cGUgZGUgcGFub3JhbWEgZXQgdXRpbGlzZQpsYSBtZXRob2RlIGRlIHRlbGVjaGFyZ2VtZW50IGFwcHJvcHJpZWUgOgoKICAtIFN0cmVldCBWaWV3IG9mZmljaWVsICghMmUwKSA6CiAgICB0aWxlcyB2aWEgY2JrMC5nb29nbGUuY29tICAtPiAgYXNzZW1ibGFnZSBlbiBlcXVpcmVjdGFuZ3VsYWlyZQoKICAtIFBob3RvIHNwaGVyZSB1dGlsaXNhdGV1ciAoITJlMSwgITJlMTAsIGV0Yy4pIDoKICAgIHRlbGVjaGFyZ2VtZW50IGRpcmVjdCBkZXB1aXMgbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbQoKVXRpbGlzYXRpb24gOgogICAgcHl0aG9uIHN0cmVldHZpZXcucHkKCkRlcGVuZGFuY2VzIDogcmVxdWVzdHMsIFBpbGxvdyAgKHZvaXIgc2V0dXAuYmF0KQoiIiIKCmltcG9ydCBvcwppbXBvcnQgcmUKaW1wb3J0IHN5cwppbXBvcnQgdGltZQppbXBvcnQgdGhyZWFkaW5nCmltcG9ydCB1cmxsaWIucGFyc2UKZnJvbSBjb25jdXJyZW50LmZ1dHVyZXMgaW1wb3J0IFRocmVhZFBvb2xFeGVjdXRvciwgYXNfY29tcGxldGVkCmltcG9ydCByZXF1ZXN0cwpmcm9tIFBJTCBpbXBvcnQgSW1hZ2UKZnJvbSBpbyBpbXBvcnQgQnl0ZXNJTwoKCiMgPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09CiMgIENPTkZJR1VSQVRJT04KIyA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0KCkRFRkFVTFRfWk9PTSA9IDQgICAjIFZhbGV1ciBwYXIgZGVmYXV0IHNpIGwndXRpbGlzYXRldXIgYXBwdWllIHN1ciBFbnRyZWUKClRJTEVTX0RJUiAgICA9ICJ0aWxlcyIKSlBFR19RVUFMSVRZID0gOTUKVElNRU9VVCAgICAgID0gMjAKUkVUUklFUyAgICAgID0gMgpNQVhfV09SS0VSUyAgPSA4CgoKIyA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0KIyAgRE9OTkVFUyBJTlRFUk5FUwojID09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQoKR1JJRCA9IHsKICAgIDA6ICgxLCAgMSksCiAgICAxOiAoMiwgIDEpLAogICAgMjogKDQsICAyKSwKICAgIDM6ICg4LCAgNCksCiAgICA0OiAoMTYsIDgpLAogICAgNTogKDI2LCAxMyksCn0KClRJTEVfU0laRSAgICAgICAgPSA1MTIKVElMRV9BUElfVVJMICAgICA9ICJodHRwczovL2NiazAuZ29vZ2xlLmNvbS9jYms/b3V0cHV0PXRpbGUmcGFub2lkPXtwYW5vfSZ6b29tPXt6b29tfSZ4PXt4fSZ5PXt5fSIKVElMRV9BUElfVVJMX0FMVCA9ICJodHRwczovL3N0cmVldHZpZXdwaXhlbHMtcGEuZ29vZ2xlYXBpcy5jb20vdjEvdGlsZT9jYl9jbGllbnQ9bWFwc19zdi50YWN0aWxlJnBhbm9pZD17cGFub30mem9vbT17em9vbX0meD17eH0meT17eX0iCgpfUEFOT0lEX1JFID0gcmUuY29tcGlsZShyIltBLVphLXowLTlfXC1dezIwLDI1fSIpCgoKIyA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0KIyAgQU5BTFlTRSBERSBMJ1VSTAojID09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQoKZGVmIGV4dHJhY3RfcGFub19pZCh0ZXh0KToKICAgIHRleHQgPSB0ZXh0LnN0cmlwKCkKICAgIGRlY29kZWQgPSB1cmxsaWIucGFyc2UudW5xdW90ZSh0ZXh0KQoKICAgIG0gPSByZS5zZWFyY2gociJwYW5vaWRbPTpdKFtBLVphLXowLTlfXC1dezIwLDI1fSkiLCBkZWNvZGVkKQogICAgaWYgbToKICAgICAgICByZXR1cm4gbS5ncm91cCgxKQoKICAgIG0gPSByZS5zZWFyY2gociIhMXMoW0EtWmEtejAtOV9cLV17MjAsMjV9KSEiLCB0ZXh0KQogICAgaWYgbToKICAgICAgICByZXR1cm4gbS5ncm91cCgxKQoKICAgIGlmIF9QQU5PSURfUkUuZnVsbG1hdGNoKHRleHQpOgogICAgICAgIHJldHVybiB0ZXh0CgogICAgcmV0dXJuIE5vbmUKCgpkZWYgcGFyc2VfdXJsX21ldGFkYXRhKHVybCk6CiAgICBkZWNvZGVkID0gdXJsbGliLnBhcnNlLnVucXVvdGUodXJsKQoKICAgIHBhbm9fdHlwZSA9IDAKICAgIG0gPSByZS5zZWFyY2gociIhMmUoXGQrKSIsIGRlY29kZWQpCiAgICBpZiBtOgogICAgICAgIHBhbm9fdHlwZSA9IGludChtLmdyb3VwKDEpKQoKICAgIHdpZHRoLCBoZWlnaHQgPSBOb25lLCBOb25lCiAgICBtID0gcmUuc2VhcmNoKHIiITdpKFxkKykiLCBkZWNvZGVkKQogICAgaWYgbToKICAgICAgICB3aWR0aCA9IGludChtLmdyb3VwKDEpKQogICAgbSA9IHJlLnNlYXJjaChyIiE4aShcZCspIiwgZGVjb2RlZCkKICAgIGlmIG06CiAgICAgICAgaGVpZ2h0ID0gaW50KG0uZ3JvdXAoMSkpCgogICAgcGhvdG9fdXJsID0gTm9uZQogICAgbSA9IHJlLnNlYXJjaChyIiE2cyhodHRwczovL1teXHMhXSspIiwgZGVjb2RlZCkKICAgIGlmIG06CiAgICAgICAgcmF3ID0gdXJsbGliLnBhcnNlLnVucXVvdGUobS5ncm91cCgxKSkKICAgICAgICBiYXNlID0gcmUubWF0Y2gociIoaHR0cHM6Ly9bQS1aYS16MC05Ll8vXC1dKykiLCByYXcpCiAgICAgICAgaWYgYmFzZToKICAgICAgICAgICAgcGhvdG9fdXJsID0gYmFzZS5ncm91cCgxKQoKICAgIHJldHVybiB7CiAgICAgICAgInBhbm9fdHlwZSI6IHBhbm9fdHlwZSwKICAgICAgICAid2lkdGgiOiAgICAgd2lkdGgsCiAgICAgICAgImhlaWdodCI6ICAgIGhlaWdodCwKICAgICAgICAicGhvdG9fdXJsIjogcGhvdG9fdXJsLAogICAgfQoKCiMgPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09CiMgIENIT0lYIERVIFpPT00gKGludGVyYWN0aWYpCiMgPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09CgpkZWYgYXNrX3pvb20oKToKICAgICIiIkFmZmljaGUgbGVzIG9wdGlvbnMgZGUgem9vbSBldCByZXRvdXJuZSBsZSBuaXZlYXUgY2hvaXNpIChpbnQpLiIiIgogICAgcHJpbnQoKQogICAgcHJpbnQoIiAgQ2hvaXNpc3NleiBsZSBuaXZlYXUgZGUgcmVzb2x1dGlvbiA6IikKICAgIHByaW50KCkKICAgIHByaW50KCIgICAgMyAgLT4gICA0IDA5NiB4ICAyIDA0OCBweCAgIDMyIHR1aWxlcyAgIGJhc3NlIHJlc29sdXRpb24iKQogICAgcHJpbnQoIiAgICA0ICAtPiAgIDggMTkyIHggIDQgMDk2IHB4ICAxMjggdHVpbGVzICAgcmVjb21tYW5kZSAgPC0tIikKICAgIHByaW50KCIgICAgNSAgLT4gIDEzIDMxMiB4ICA2IDY1NiBweCAgMzM4IHR1aWxlcyAgIGhhdXRlIHJlc29sdXRpb24sIGxlbnQiKQogICAgcHJpbnQoKQoKICAgIHdoaWxlIFRydWU6CiAgICAgICAgcmF3ID0gaW5wdXQoZiIgIFpvb20gW0VudHJlZSA9IHtERUZBVUxUX1pPT019XSA6ICIpLnN0cmlwKCkKCiAgICAgICAgaWYgcmF3ID09ICIiOgogICAgICAgICAgICByZXR1cm4gREVGQVVMVF9aT09NCgogICAgICAgIGlmIHJhdyBpbiAoIjMiLCAiNCIsICI1Iik6CiAgICAgICAgICAgIHJldHVybiBpbnQocmF3KQoKICAgICAgICBwcmludChmIiAgVmFsZXVyIGludmFsaWRlLiBFbnRyZXogMywgNCBvdSA1IChvdSBFbnRyZWUgcG91ciB7REVGQVVMVF9aT09NfSkuIikKCgojID09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQojICBNRVRIT0RFIEEgLS0gU1RSRUVUIFZJRVcgT0ZGSUNJRUwgOiBhc3NlbWJsYWdlIGRlIHRpbGVzCiMgPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09CgpkZWYgX2Rvd25sb2FkX3RpbGUoc2Vzc2lvbiwgcGFub19pZCwgem9vbSwgeCwgeSk6CiAgICBsYXN0X2VyciA9ICJ1bmtub3duIgogICAgZm9yIHVybF90ZW1wbGF0ZSBpbiAoVElMRV9BUElfVVJMX0FMVCwgVElMRV9BUElfVVJMKToKICAgICAgICB1cmwgPSB1cmxfdGVtcGxhdGUuZm9ybWF0KHBhbm89cGFub19pZCwgem9vbT16b29tLCB4PXgsIHk9eSkKICAgICAgICBmb3IgYXR0ZW1wdCBpbiByYW5nZSgxLCBSRVRSSUVTICsgMik6CiAgICAgICAgICAgIHRyeToKICAgICAgICAgICAgICAgIHIgPSBzZXNzaW9uLmdldCh1cmwsIHRpbWVvdXQ9VElNRU9VVCkKICAgICAgICAgICAgICAgIHIucmFpc2VfZm9yX3N0YXR1cygpCiAgICAgICAgICAgICAgICByZXR1cm4gSW1hZ2Uub3BlbihCeXRlc0lPKHIuY29udGVudCkpLmNvbnZlcnQoIlJHQiIpLCBOb25lCiAgICAgICAgICAgIGV4Y2VwdCByZXF1ZXN0cy5leGNlcHRpb25zLkhUVFBFcnJvciBhcyBlOgogICAgICAgICAgICAgICAgbGFzdF9lcnIgPSBmIkhUVFAge2UucmVzcG9uc2Uuc3RhdHVzX2NvZGV9IgogICAgICAgICAgICAgICAgaWYgZS5yZXNwb25zZS5zdGF0dXNfY29kZSA9PSA0MDM6CiAgICAgICAgICAgICAgICAgICAgYnJlYWsKICAgICAgICAgICAgZXhjZXB0IHJlcXVlc3RzLmV4Y2VwdGlvbnMuVGltZW91dDoKICAgICAgICAgICAgICAgIGxhc3RfZXJyID0gInRpbWVvdXQiCiAgICAgICAgICAgIGV4Y2VwdCByZXF1ZXN0cy5leGNlcHRpb25zLkNvbm5lY3Rpb25FcnJvcjoKICAgICAgICAgICAgICAgIGxhc3RfZXJyID0gImNvbm5leGlvbiByZWZ1c2VlIgogICAgICAgICAgICBleGNlcHQgRXhjZXB0aW9uIGFzIGU6CiAgICAgICAgICAgICAgICBsYXN0X2VyciA9IHN0cihlKQogICAgICAgICAgICBpZiBhdHRlbXB0IDw9IFJFVFJJRVM6CiAgICAgICAgICAgICAgICB0aW1lLnNsZWVwKDEuNSkKICAgIHJldHVybiBOb25lLCBsYXN0X2VycgoKCmRlZiBfcHJvZ3Jlc3NfYmFyKGRvbmUsIHRvdGFsLCB3aWR0aD0zNSk6CiAgICBwY3QgICAgPSBkb25lIC8gdG90YWwgaWYgdG90YWwgZWxzZSAwCiAgICBmaWxsZWQgPSBpbnQod2lkdGggKiBwY3QpCiAgICByZXR1cm4gZiJbeyfilognICogZmlsbGVkfXsn4paRJyAqICh3aWR0aCAtIGZpbGxlZCl9XSB7ZG9uZTozZH0ve3RvdGFsfSAge3BjdCoxMDA6NS4xZn0lIgoKCmRlZiBkb3dubG9hZF9zdHJlZXR2aWV3X3RpbGVzKHNlc3Npb24sIHBhbm9faWQsIHpvb20pOgogICAgaWYgem9vbSBub3QgaW4gR1JJRDoKICAgICAgICBwcmludChmIltFUlJFVVJdIHpvb209e3pvb219IGludmFsaWRlLiIpCiAgICAgICAgcmV0dXJuIE5vbmUKCiAgICBjb2xzLCByb3dzID0gR1JJRFt6b29tXQogICAgdG90YWwgICAgICA9IGNvbHMgKiByb3dzCiAgICB3b3JrZXJzICAgID0gbWF4KDEsIE1BWF9XT1JLRVJTKQoKICAgIHByaW50KCkKICAgIHByaW50KGYiICBNZXRob2RlICAgICA6IHRpbGVzIFN0cmVldCBWaWV3IG9mZmljaWVsIikKICAgIHByaW50KGYiICBab29tICAgICAgICA6IHt6b29tfSAgLT4gIHtjb2xzICogVElMRV9TSVpFfSB4IHtyb3dzICogVElMRV9TSVpFfSBweCIpCiAgICBwcmludChmIiAgVG90YWwgdGlsZXMgOiB7dG90YWx9ICAoe2NvbHN9eHtyb3dzfSkiKQogICAgcHJpbnQoZiIgIFBhcmFsbGVsaXNtZToge3dvcmtlcnN9IHdvcmtlcnMiKQogICAgcHJpbnQoKQoKICAgIHRpbGVzX3N1YmRpciA9IG9zLnBhdGguam9pbihUSUxFU19ESVIsIHBhbm9faWQpCiAgICBvcy5tYWtlZGlycyh0aWxlc19zdWJkaXIsIGV4aXN0X29rPVRydWUpCgogICAgdGlsZXNfZGljdCA9IHt9CiAgICBva19jb3VudCAgID0gMAogICAgZmFpbF9jb3VudCA9IDAKICAgIGRvbmUgICAgICAgPSAwCiAgICBsb2NrICAgICAgID0gdGhyZWFkaW5nLkxvY2soKQoKICAgIGRlZiBfZmV0Y2hfYW5kX3JlcG9ydCh4LCB5KToKICAgICAgICBpbWcsIGVyciA9IF9kb3dubG9hZF90aWxlKHNlc3Npb24sIHBhbm9faWQsIHpvb20sIHgsIHkpCiAgICAgICAgcmV0dXJuIHgsIHksIGltZywgZXJyCgogICAgY29vcmRzID0gWyh4LCB5KSBmb3IgeSBpbiByYW5nZShyb3dzKSBmb3IgeCBpbiByYW5nZShjb2xzKV0KCiAgICB3aXRoIFRocmVhZFBvb2xFeGVjdXRvcihtYXhfd29ya2Vycz13b3JrZXJzKSBhcyBleGVjdXRvcjoKICAgICAgICBmdXR1cmVzID0ge2V4ZWN1dG9yLnN1Ym1pdChfZmV0Y2hfYW5kX3JlcG9ydCwgeCwgeSk6ICh4LCB5KSBmb3IgeCwgeSBpbiBjb29yZHN9CiAgICAgICAgZm9yIGZ1dHVyZSBpbiBhc19jb21wbGV0ZWQoZnV0dXJlcyk6CiAgICAgICAgICAgIHgsIHksIGltZywgZXJyID0gZnV0dXJlLnJlc3VsdCgpCiAgICAgICAgICAgIHdpdGggbG9jazoKICAgICAgICAgICAgICAgIGRvbmUgKz0gMQogICAgICAgICAgICAgICAgaWYgaW1nIGlzIG5vdCBOb25lOgogICAgICAgICAgICAgICAgICAgIHBhdGggPSBvcy5wYXRoLmpvaW4odGlsZXNfc3ViZGlyLCBmInRpbGVfe3g6MDJkfV97eTowMmR9LmpwZyIpCiAgICAgICAgICAgICAgICAgICAgaW1nLnNhdmUocGF0aCwgIkpQRUciLCBxdWFsaXR5PUpQRUdfUVVBTElUWSkKICAgICAgICAgICAgICAgICAgICB0aWxlc19kaWN0Wyh4LCB5KV0gPSBpbWcKICAgICAgICAgICAgICAgICAgICBva19jb3VudCArPSAxCiAgICAgICAgICAgICAgICAgICAgc3RhdHVzID0gIiBPSyAiCiAgICAgICAgICAgICAgICAgICAgc3VmZml4ID0gIiIKICAgICAgICAgICAgICAgIGVsc2U6CiAgICAgICAgICAgICAgICAgICAgZmFpbF9jb3VudCArPSAxCiAgICAgICAgICAgICAgICAgICAgc3RhdHVzID0gIkZBSUwiCiAgICAgICAgICAgICAgICAgICAgc3VmZml4ID0gZiIgIC0tIHtlcnJ9IgogICAgICAgICAgICAgICAgcHJpbnQoZiIgIFt7c3RhdHVzfV0gdGlsZSAoe3g6MDJkfSx7eTowMmR9KSAge19wcm9ncmVzc19iYXIoZG9uZSwgdG90YWwpfXtzdWZmaXh9IiwgZmx1c2g9VHJ1ZSkKCiAgICBwcmludCgpCiAgICBwcmludChmIiAgQmlsYW4gOiB7b2tfY291bnR9L3t0b3RhbH0gT0sgIHwgIHtmYWlsX2NvdW50fSBlY2hlY3MiKQoKICAgIGlmIG9rX2NvdW50ID09IDA6CiAgICAgICAgcHJpbnQoIltFUlJFVVJdIEF1Y3VuZSB0aWxlIHJlY3VlLiBWZXJpZmlleiBsZSBwYW5vSUQuIikKICAgICAgICByZXR1cm4gTm9uZQoKICAgIGlmIGZhaWxfY291bnQgPiAwOgogICAgICAgIHByaW50KGYiICBBdHRlbnRpb24gOiB7ZmFpbF9jb3VudC90b3RhbCoxMDA6LjFmfSUgbWFucXVhbnRlcyAtPiB6b25lcyBub2lyZXMiKQoKICAgIHByaW50KCkKICAgIHByaW50KCIgIEFzc2VtYmxhZ2UuLi4iKQogICAgcGFub3JhbWEgPSBJbWFnZS5uZXcoIlJHQiIsIChjb2xzICogVElMRV9TSVpFLCByb3dzICogVElMRV9TSVpFKSwgKDAsIDAsIDApKQogICAgZm9yICh4LCB5KSwgaW1nIGluIHRpbGVzX2RpY3QuaXRlbXMoKToKICAgICAgICBwYW5vcmFtYS5wYXN0ZShpbWcsICh4ICogVElMRV9TSVpFLCB5ICogVElMRV9TSVpFKSkKICAgIHJldHVybiBwYW5vcmFtYQoKCiMgPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09CiMgIE1FVEhPREUgQiAtLSBQSE9UTyBTUEhFUkUgVVRJTElTQVRFVVIgOiB0ZWxlY2hhcmdlbWVudCBkaXJlY3QgQ0ROCiMgPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09CgpkZWYgZG93bmxvYWRfcGhvdG9fc3BoZXJlKHNlc3Npb24sIHBob3RvX3VybCwgd2lkdGgsIGhlaWdodCk6CiAgICBpZiBub3QgcGhvdG9fdXJsOgogICAgICAgIHByaW50KCJbRVJSRVVSXSBVUkwgQ0ROIGludHJvdXZhYmxlIGRhbnMgbGUgbGllbiBHb29nbGUgTWFwcy4iKQogICAgICAgIHByaW50KCIgIENvcGlleiBsJ1VSTCBkaXJlY3RlbWVudCBkZXB1aXMgbGEgYmFycmUgZCdhZHJlc3NlIFN0cmVldCBWaWV3LiIpCiAgICAgICAgcmV0dXJuIE5vbmUKCiAgICBpZiBub3Qgd2lkdGggb3Igbm90IGhlaWdodDoKICAgICAgICB3aWR0aCwgaGVpZ2h0ID0gODE5MiwgNDA5NgogICAgICAgIHByaW50KGYiICBEaW1lbnNpb25zIG5vbiBkZXRlY3RlZXMsIGZhbGxiYWNrIDoge3dpZHRofXh7aGVpZ2h0fSIpCgogICAgY2RuX3VybCA9IGYie3Bob3RvX3VybH09d3t3aWR0aH0taHtoZWlnaHR9LWstbm8iCgogICAgcHJpbnQoZiIgIE1ldGhvZGUgIDogcGhvdG8gc3BoZXJlIHV0aWxpc2F0ZXVyIChDRE4gZGlyZWN0KSIpCiAgICBwcmludChmIiAgVGFpbGxlICAgOiB7d2lkdGh9IHgge2hlaWdodH0gcHgiKQogICAgcHJpbnQoZiIgIFVSTCBDRE4gIDoge2Nkbl91cmxbOjgwXX0uLi4iKQogICAgcHJpbnQoKQogICAgcHJpbnQoIiAgVGVsZWNoYXJnZW1lbnQgZW4gY291cnMuLi4iLCBmbHVzaD1UcnVlKQoKICAgIGZvciBhdHRlbXB0IGluIHJhbmdlKDEsIFJFVFJJRVMgKyAyKToKICAgICAgICB0cnk6CiAgICAgICAgICAgIHIgPSBzZXNzaW9uLmdldChjZG5fdXJsLCB0aW1lb3V0PTYwLCBzdHJlYW09VHJ1ZSkKICAgICAgICAgICAgci5yYWlzZV9mb3Jfc3RhdHVzKCkKCiAgICAgICAgICAgIGNvbnRlbnQgPSBiIiIKICAgICAgICAgICAgdG90YWxfc2l6ZSA9IGludChyLmhlYWRlcnMuZ2V0KCJDb250ZW50LUxlbmd0aCIsIDApKQogICAgICAgICAgICBkb3dubG9hZGVkID0gMAogICAgICAgICAgICBmb3IgY2h1bmsgaW4gci5pdGVyX2NvbnRlbnQoY2h1bmtfc2l6ZT02NTUzNik6CiAgICAgICAgICAgICAgICBjb250ZW50ICs9IGNodW5rCiAgICAgICAgICAgICAgICBkb3dubG9hZGVkICs9IGxlbihjaHVuaykKICAgICAgICAgICAgICAgIGlmIHRvdGFsX3NpemU6CiAgICAgICAgICAgICAgICAgICAgcGN0ID0gZG93bmxvYWRlZCAvIHRvdGFsX3NpemUgKiAxMDAKICAgICAgICAgICAgICAgICAgICBwcmludChmIlxyICBSZWN1IDoge2Rvd25sb2FkZWQvMTAyNC8xMDI0Oi4xZn0gTW8gLyB7dG90YWxfc2l6ZS8xMDI0LzEwMjQ6LjFmfSBNbyAgKHtwY3Q6LjBmfSUpIiwgZW5kPSIiLCBmbHVzaD1UcnVlKQoKICAgICAgICAgICAgcHJpbnQoKQogICAgICAgICAgICBpbWcgPSBJbWFnZS5vcGVuKEJ5dGVzSU8oY29udGVudCkpLmNvbnZlcnQoIlJHQiIpCiAgICAgICAgICAgIHByaW50KGYiICBbT0tdIEltYWdlIHJlY3VlIDoge2ltZy53aWR0aH14e2ltZy5oZWlnaHR9IHB4IikKICAgICAgICAgICAgcmV0dXJuIGltZwoKICAgICAgICBleGNlcHQgcmVxdWVzdHMuZXhjZXB0aW9ucy5UaW1lb3V0OgogICAgICAgICAgICBlcnIgPSAidGltZW91dCIKICAgICAgICBleGNlcHQgcmVxdWVzdHMuZXhjZXB0aW9ucy5IVFRQRXJyb3IgYXMgZToKICAgICAgICAgICAgZXJyID0gZiJIVFRQIHtlLnJlc3BvbnNlLnN0YXR1c19jb2RlfSIKICAgICAgICBleGNlcHQgRXhjZXB0aW9uIGFzIGU6CiAgICAgICAgICAgIGVyciA9IHN0cihlKQoKICAgICAgICBwcmludChmIlxuICBbVGVudGF0aXZlIHthdHRlbXB0fV0gRWNoZWMgOiB7ZXJyfSIpCiAgICAgICAgaWYgYXR0ZW1wdCA8PSBSRVRSSUVTOgogICAgICAgICAgICB0aW1lLnNsZWVwKDIpCgogICAgcHJpbnQoZiJbRVJSRVVSXSBJbXBvc3NpYmxlIGRlIHRlbGVjaGFyZ2VyIGxhIHBob3RvIHNwaGVyZSA6IHtlcnJ9IikKICAgIHJldHVybiBOb25lCgoKIyA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0KIyAgUFJPR1JBTU1FIFBSSU5DSVBBTAojID09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQoKUEFOT19UWVBFX0xBQkVMUyA9IHsKICAgIDA6ICAiU3RyZWV0IFZpZXcgb2ZmaWNpZWwiLAogICAgMTogICJQaG90byB1dGlsaXNhdGV1ciAoR29vZ2xlIE1hcHMpIiwKICAgIDI6ICAiVHJ1c3RlZCBjb250cmlidXRvciIsCiAgICAxMDogIlBob3RvIHNwaGVyZSAvIDM2MCB0aWVycyIsCn0KCmRlZiBtYWluKCk6CgogICAgcHJpbnQoKQogICAgcHJpbnQoIj0iICogNjIpCiAgICBwcmludCgiICBTdHJlZXQgVmlldyBQYW5vcmFtYSBEb3dubG9hZGVyIikKICAgIHByaW50KCIgIFtRICsgRW50cmVlXSBwb3VyIHF1aXR0ZXIiKQogICAgcHJpbnQoIj0iICogNjIpCgogICAgd2l0aCByZXF1ZXN0cy5TZXNzaW9uKCkgYXMgc2Vzc2lvbjoKICAgICAgICBzZXNzaW9uLmhlYWRlcnMudXBkYXRlKHsKICAgICAgICAgICAgIlVzZXItQWdlbnQiOiAiTW96aWxsYS81LjAgKFdpbmRvd3MgTlQgMTAuMDsgV2luNjQ7IHg2NCkgIgogICAgICAgICAgICAgICAgICAgICAgICAgICJBcHBsZVdlYktpdC81MzcuMzYgKEtIVE1MLCBsaWtlIEdlY2tvKSAiCiAgICAgICAgICAgICAgICAgICAgICAgICAgIkNocm9tZS8xMjAuMC4wLjAgU2FmYXJpLzUzNy4zNiIKICAgICAgICB9KQoKICAgICAgICB3aGlsZSBUcnVlOgoKICAgICAgICAgICAgIyAtLSBTYWlzaWUgVVJMIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tCiAgICAgICAgICAgIHByaW50KCkKICAgICAgICAgICAgcHJpbnQoIiAgTm91dmVsbGUgVVJMIEdvb2dsZSBNYXBzIG91IHBhbm9JRCA6IikKICAgICAgICAgICAgcHJpbnQoKQogICAgICAgICAgICByYXcgPSBpbnB1dCgiICA+ICIpLnN0cmlwKCkKCiAgICAgICAgICAgIGlmIG5vdCByYXc6CiAgICAgICAgICAgICAgICBjb250aW51ZQoKICAgICAgICAgICAgaWYgcmF3Lmxvd2VyKCkgPT0gInEiOgogICAgICAgICAgICAgICAgcHJpbnQoKQogICAgICAgICAgICAgICAgcHJpbnQoIiAgQXUgcmV2b2lyLiIpCiAgICAgICAgICAgICAgICBwcmludCgpCiAgICAgICAgICAgICAgICBicmVhawoKICAgICAgICAgICAgIyAtLSBFeHRyYWN0aW9uIGR1IHBhbm9JRCAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0KICAgICAgICAgICAgcGFub19pZCA9IGV4dHJhY3RfcGFub19pZChyYXcpCiAgICAgICAgICAgIGlmIG5vdCBwYW5vX2lkOgogICAgICAgICAgICAgICAgcHJpbnQoIiAgW0VSUkVVUl0gSW1wb3NzaWJsZSBkJ2V4dHJhaXJlIHVuIHBhbm9JRC4gVmVyaWZpZXogbCdVUkwuIikKICAgICAgICAgICAgICAgIGNvbnRpbnVlCgogICAgICAgICAgICBtZXRhID0gcGFyc2VfdXJsX21ldGFkYXRhKHJhdykgaWYgcmF3LnN0YXJ0c3dpdGgoImh0dHAiKSBlbHNlIHsKICAgICAgICAgICAgICAgICJwYW5vX3R5cGUiOiAwLCAid2lkdGgiOiBOb25lLCAiaGVpZ2h0IjogTm9uZSwgInBob3RvX3VybCI6IE5vbmUKICAgICAgICAgICAgfQoKICAgICAgICAgICAgcGFub190eXBlICA9IG1ldGFbInBhbm9fdHlwZSJdCiAgICAgICAgICAgIHR5cGVfbGFiZWwgPSBQQU5PX1RZUEVfTEFCRUxTLmdldChwYW5vX3R5cGUsIGYiVHlwZSBpbmNvbm51ICh7cGFub190eXBlfSkiKQoKICAgICAgICAgICAgcHJpbnQoKQogICAgICAgICAgICBwcmludCgiPSIgKiA2MikKICAgICAgICAgICAgcHJpbnQoZiIgIFBhbm9JRCAgIDoge3Bhbm9faWR9IikKICAgICAgICAgICAgcHJpbnQoZiIgIFR5cGUgICAgIDoge3R5cGVfbGFiZWx9IikKICAgICAgICAgICAgaWYgbWV0YVsid2lkdGgiXSBhbmQgbWV0YVsiaGVpZ2h0Il06CiAgICAgICAgICAgICAgICBwcmludChmIiAgUmVzLiBtYXggOiB7bWV0YVsnd2lkdGgnXX0geCB7bWV0YVsnaGVpZ2h0J119IHB4IikKICAgICAgICAgICAgcHJpbnQoIj0iICogNjIpCgogICAgICAgICAgICAjIC0tIENob2l4IGR1IHpvb20gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0KICAgICAgICAgICAgaWYgcGFub190eXBlID09IDA6CiAgICAgICAgICAgICAgICB6b29tID0gYXNrX3pvb20oKQogICAgICAgICAgICBlbHNlOgogICAgICAgICAgICAgICAgem9vbSA9IERFRkFVTFRfWk9PTQogICAgICAgICAgICAgICAgcHJpbnQoKQogICAgICAgICAgICAgICAgcHJpbnQoIiAgKFBob3RvIHNwaGVyZSA6IHpvb20gc2FucyBlZmZldCwgcmVzb2x1dGlvbiBkJ29yaWdpbmUgdXRpbGlzZWUpIikKCiAgICAgICAgICAgICMgLS0gVGVsZWNoYXJnZW1lbnQgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQogICAgICAgICAgICBpZiBwYW5vX3R5cGUgPT0gMDoKICAgICAgICAgICAgICAgIHBhbm9yYW1hID0gZG93bmxvYWRfc3RyZWV0dmlld190aWxlcyhzZXNzaW9uLCBwYW5vX2lkLCB6b29tKQogICAgICAgICAgICAgICAgb3V0cHV0ICAgPSBmInBhbm9yYW1hX3twYW5vX2lkfV96e3pvb219LmpwZyIKICAgICAgICAgICAgZWxzZToKICAgICAgICAgICAgICAgIHBhbm9yYW1hID0gZG93bmxvYWRfcGhvdG9fc3BoZXJlKAogICAgICAgICAgICAgICAgICAgIHNlc3Npb24sCiAgICAgICAgICAgICAgICAgICAgbWV0YVsicGhvdG9fdXJsIl0sCiAgICAgICAgICAgICAgICAgICAgbWV0YVsid2lkdGgiXSwKICAgICAgICAgICAgICAgICAgICBtZXRhWyJoZWlnaHQiXSwKICAgICAgICAgICAgICAgICkKICAgICAgICAgICAgICAgIG91dHB1dCA9IGYicGFub3JhbWFfe3Bhbm9faWR9LmpwZyIKCiAgICAgICAgICAgIGlmIHBhbm9yYW1hIGlzIE5vbmU6CiAgICAgICAgICAgICAgICBwcmludCgiICBFY2hlYyBkdSB0ZWxlY2hhcmdlbWVudC4gRXNzYXlleiB1bmUgYXV0cmUgVVJMLiIpCiAgICAgICAgICAgICAgICBjb250aW51ZQoKICAgICAgICAgICAgIyAtLSBTYXV2ZWdhcmRlIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tCiAgICAgICAgICAgIHByaW50KGYiICBTYXV2ZWdhcmRlIC0+IHtvdXRwdXR9IikKICAgICAgICAgICAgcGFub3JhbWEuc2F2ZShvdXRwdXQsICJKUEVHIiwgcXVhbGl0eT1KUEVHX1FVQUxJVFkpCgogICAgICAgICAgICB3LCBoICAgID0gcGFub3JhbWEuc2l6ZQogICAgICAgICAgICBzaXplX21iID0gb3MucGF0aC5nZXRzaXplKG91dHB1dCkgLyAoMTAyNCAqIDEwMjQpCiAgICAgICAgICAgIHJhdGlvICAgPSB3IC8gaGlmIGggZWxzZSAwCgogICAgICAgICAgICBwcmludCgpCiAgICAgICAgICAgIHByaW50KCI9IiAqIDYyKQogICAgICAgICAgICBwcmludChmIiAgVEVSTUlORSAgLS0gIHtvdXRwdXR9IikKICAgICAgICAgICAgcHJpbnQoZiIgIERpbWVuc2lvbnMgOiB7d30geCB7aH0gcHgiKQogICAgICAgICAgICBwcmludChmIiAgUmF0aW8gICAgICA6IHtyYXRpbzouMmZ9OjEgIChjaWJsZSAyLjAwOjEpIikKICAgICAgICAgICAgcHJpbnQoZiIgIFRhaWxsZSAgICAgOiB7c2l6ZV9tYjouMWZ9IE1vIikKICAgICAgICAgICAgcHJpbnQoIj0iICogNjIpCiAgICAgICAgICAgIHByaW50KCkKICAgICAgICAgICAgcHJpbnQoIiAgVXRpbGlzYWJsZSBjb21tZSBjYXJ0ZSBzcGhlcmlxdWUgZGFucyAzZHMgTWF4ICsgVi1SYXkuIikKCgppZiBfX25hbWVfXyA9PSAiX19tYWluX18iOgogICAgbWFpbigpCg==
+#!/usr/bin/env python3
+"""
+streetview.py  --  Google Street View Panorama Downloader
+=========================================================
+Accepte une URL Google Maps ou un panoID brut.
+Detecte automatiquement le type de panorama et utilise
+la methode de telechargement appropriee :
+
+  - Street View officiel (!2e0) :
+    tiles via cbk0.google.com  ->  assemblage en equirectangulaire
+
+  - Photo sphere utilisateur (!2e1, !2e10, etc.) :
+    telechargement direct depuis lh3.googleusercontent.com
+
+Utilisation :
+    python streetview.py
+
+Dependances : requests, Pillow  (voir setup.bat)
+"""
+
+import os
+import re
+import sys
+import time
+import threading
+import urllib.parse
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import requests
+from PIL import Image
+from io import BytesIO
+
+
+# ==============================================================================
+#  CONFIGURATION
+# ==============================================================================
+
+DEFAULT_ZOOM = 4   # Valeur par defaut si l'utilisateur appuie sur Entree
+
+TILES_DIR    = "tiles"
+JPEG_QUALITY = 95
+TIMEOUT      = 20
+RETRIES      = 2
+MAX_WORKERS  = 8
+
+
+# ==============================================================================
+#  DONNEES INTERNES
+# ==============================================================================
+
+GRID = {
+    0: (1,  1),
+    1: (2,  1),
+    2: (4,  2),
+    3: (8,  4),
+    4: (16, 8),
+    5: (26, 13),
+}
+
+TILE_SIZE        = 512
+TILE_API_URL     = "https://cbk0.google.com/cbk?output=tile&panoid={pano}&zoom={zoom}&x={x}&y={y}"
+TILE_API_URL_ALT = "https://streetviewpixels-pa.googleapis.com/v1/tile?cb_client=maps_sv.tactile&panoid={pano}&zoom={zoom}&x={x}&y={y}"
+
+_PANOID_RE = re.compile(r"[A-Za-z0-9_\-]{20,25}")
+
+
+# ==============================================================================
+#  ANALYSE DE L'URL
+# ==============================================================================
+
+def extract_pano_id(text):
+    text = text.strip()
+    decoded = urllib.parse.unquote(text)
+
+    m = re.search(r"panoid[=:]([A-Za-z0-9_\-]{20,25})", decoded)
+    if m:
+        return m.group(1)
+
+    m = re.search(r"!1s([A-Za-z0-9_\-]{20,25})!", text)
+    if m:
+        return m.group(1)
+
+    if _PANOID_RE.fullmatch(text):
+        return text
+
+    return None
+
+
+def parse_url_metadata(url):
+    decoded = urllib.parse.unquote(url)
+
+    pano_type = 0
+    m = re.search(r"!2e(\d+)", decoded)
+    if m:
+        pano_type = int(m.group(1))
+
+    width, height = None, None
+    m = re.search(r"!7i(\d+)", decoded)
+    if m:
+        width = int(m.group(1))
+    m = re.search(r"!8i(\d+)", decoded)
+    if m:
+        height = int(m.group(1))
+
+    photo_url = None
+    m = re.search(r"!6s(https://[^\s!]+)", decoded)
+    if m:
+        raw = urllib.parse.unquote(m.group(1))
+        base = re.match(r"(https://[A-Za-z0-9._/\-]+)", raw)
+        if base:
+            photo_url = base.group(1)
+
+    return {
+        "pano_type": pano_type,
+        "width":     width,
+        "height":    height,
+        "photo_url": photo_url,
+    }
+
+
+# ==============================================================================
+#  CHOIX DU ZOOM (interactif)
+# ==============================================================================
+
+def ask_zoom():
+    print()
+    print("  Choisissez le niveau de resolution :")
+    print()
+    print("    3  ->   4 096 x  2 048 px   32 tuiles   basse resolution")
+    print("    4  ->   8 192 x  4 096 px  128 tuiles   recommande  <--")
+    print("    5  ->  13 312 x  6 656 px  338 tuiles   haute resolution, lent")
+    print()
+
+    while True:
+        raw = input(f"  Zoom [Entree = {DEFAULT_ZOOM}] : ").strip()
+
+        if raw == "":
+            return DEFAULT_ZOOM
+
+        if raw in ("3", "4", "5"):
+            return int(raw)
+
+        print(f"  Valeur invalide. Entrez 3, 4 ou 5 (ou Entree pour {DEFAULT_ZOOM}).")
+
+
+# ==============================================================================
+#  METHODE A -- STREET VIEW OFFICIEL : assemblage de tiles
+# ==============================================================================
+
+def _download_tile(session, pano_id, zoom, x, y):
+    last_err = "unknown"
+    for url_template in (TILE_API_URL_ALT, TILE_API_URL):
+        url = url_template.format(pano=pano_id, zoom=zoom, x=x, y=y)
+        for attempt in range(1, RETRIES + 2):
+            try:
+                r = session.get(url, timeout=TIMEOUT)
+                r.raise_for_status()
+                return Image.open(BytesIO(r.content)).convert("RGB"), None
+            except requests.exceptions.HTTPError as e:
+                last_err = f"HTTP {e.response.status_code}"
+                if e.response.status_code == 403:
+                    break
+            except requests.exceptions.Timeout:
+                last_err = "timeout"
+            except requests.exceptions.ConnectionError:
+                last_err = "connexion refusee"
+            except Exception as e:
+                last_err = str(e)
+            if attempt <= RETRIES:
+                time.sleep(1.5)
+    return None, last_err
+
+
+def _progress_bar(done, total, width=35):
+    pct    = done / total if total else 0
+    filled = int(width * pct)
+    return f"[{'█' * filled}{'░' * (width - filled)}] {done:3d}/{total}  {pct*100:5.1f}%"
+
+
+def download_streetview_tiles(session, pano_id, zoom):
+    if zoom not in GRID:
+        print(f"[ERREUR] zoom={zoom} invalide.")
+        return None
+
+    cols, rows = GRID[zoom]
+    total      = cols * rows
+    workers    = max(1, MAX_WORKERS)
+
+    print()
+    print(f"  Methode     : tiles Street View officiel")
+    print(f"  Zoom        : {zoom}  ->  {cols * TILE_SIZE} x {rows * TILE_SIZE} px")
+    print(f"  Total tiles : {total}  ({cols}x{rows})")
+    print(f"  Parallelisme: {workers} workers")
+    print()
+
+    tiles_subdir = os.path.join(TILES_DIR, pano_id)
+    os.makedirs(tiles_subdir, exist_ok=True)
+
+    tiles_dict = {}
+    ok_count   = 0
+    fail_count = 0
+    done       = 0
+    lock       = threading.Lock()
+
+    def _fetch_and_report(x, y):
+        img, err = _download_tile(session, pano_id, zoom, x, y)
+        return x, y, img, err
+
+    coords = [(x, y) for y in range(rows) for x in range(cols)]
+
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = {executor.submit(_fetch_and_report, x, y): (x, y) for x, y in coords}
+        for future in as_completed(futures):
+            x, y, img, err = future.result()
+            with lock:
+                done += 1
+                if img is not None:
+                    path = os.path.join(tiles_subdir, f"tile_{x:02d}_{y:02d}.jpg")
+                    img.save(path, "JPEG", quality=JPEG_QUALITY)
+                    tiles_dict[(x, y)] = img
+                    ok_count += 1
+                    status = " OK "
+                    suffix = ""
+                else:
+                    fail_count += 1
+                    status = "FAIL"
+                    suffix = f"  -- {err}"
+                print(f"  [{status}] tile ({x:02d},{y:02d})  {_progress_bar(done, total)}{suffix}", flush=True)
+
+    print()
+    print(f"  Bilan : {ok_count}/{total} OK  |  {fail_count} echecs")
+
+    if ok_count == 0:
+        print("[ERREUR] Aucune tile recue. Verifiez le panoID.")
+        return None
+
+    if fail_count > 0:
+        print(f"  Attention : {fail_count/total*100:.1f}% manquantes -> zones noires")
+
+    print()
+    print("  Assemblage...")
+    panorama = Image.new("RGB", (cols * TILE_SIZE, rows * TILE_SIZE), (0, 0, 0))
+    for (x, y), img in tiles_dict.items():
+        panorama.paste(img, (x * TILE_SIZE, y * TILE_SIZE))
+    return panorama
+
+
+# ==============================================================================
+#  METHODE B -- PHOTO SPHERE UTILISATEUR : telechargement direct CDN
+# ==============================================================================
+
+def download_photo_sphere(session, photo_url, width, height):
+    if not photo_url:
+        print("[ERREUR] URL CDN introuvable dans le lien Google Maps.")
+        print("  Copiez l'URL directement depuis la barre d'adresse Street View.")
+        return None
+
+    if not width or not height:
+        width, height = 8192, 4096
+        print(f"  Dimensions non detectees, fallback : {width}x{height}")
+
+    cdn_url = f"{photo_url}=w{width}-h{height}-k-no"
+
+    print(f"  Methode  : photo sphere utilisateur (CDN direct)")
+    print(f"  Taille   : {width} x {height} px")
+    print(f"  URL CDN  : {cdn_url[:80]}...")
+    print()
+    print("  Telechargement en cours...", flush=True)
+
+    for attempt in range(1, RETRIES + 2):
+        try:
+            r = session.get(cdn_url, timeout=60, stream=True)
+            r.raise_for_status()
+
+            content = b""
+            total_size = int(r.headers.get("Content-Length", 0))
+            downloaded = 0
+            for chunk in r.iter_content(chunk_size=65536):
+                content += chunk
+                downloaded += len(chunk)
+                if total_size:
+                    pct = downloaded / total_size * 100
+                    print(f"\r  Recu : {downloaded/1024/1024:.1f} Mo / {total_size/1024/1024:.1f} Mo  ({pct:.0f}%)", end="", flush=True)
+
+            print()
+            img = Image.open(BytesIO(content)).convert("RGB")
+            print(f"  [OK] Image recue : {img.width}x{img.height} px")
+            return img
+
+        except requests.exceptions.Timeout:
+            err = "timeout"
+        except requests.exceptions.HTTPError as e:
+            err = f"HTTP {e.response.status_code}"
+        except Exception as e:
+            err = str(e)
+
+        print(f"\n  [Tentative {attempt}] Echec : {err}")
+        if attempt <= RETRIES:
+            time.sleep(2)
+
+    print(f"[ERREUR] Impossible de telecharger la photo sphere : {err}")
+    return None
+
+
+# ==============================================================================
+#  PROGRAMME PRINCIPAL
+# ==============================================================================
+
+PANO_TYPE_LABELS = {
+    0:  "Street View officiel",
+    1:  "Photo utilisateur (Google Maps)",
+    2:  "Trusted contributor",
+    10: "Photo sphere / 360 tiers",
+}
+
+def main():
+
+    print()
+    print("=" * 62)
+    print("  Street View Panorama Downloader")
+    print("  [Q + Entree] pour quitter")
+    print("=" * 62)
+
+    with requests.Session() as session:
+        session.headers.update({
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                          "AppleWebKit/537.36 (KHTML, like Gecko) "
+                          "Chrome/120.0.0.0 Safari/537.36"
+        })
+
+        while True:
+
+            # -- Saisie URL
+            print()
+            print("  Nouvelle URL Google Maps ou panoID :")
+            print()
+            raw = input("  > ").strip()
+
+            if not raw:
+                continue
+
+            if raw.lower() == "q":
+                print()
+                print("  Au revoir.")
+                print()
+                break
+
+            # -- Extraction du panoID
+            pano_id = extract_pano_id(raw)
+            if not pano_id:
+                print("  [ERREUR] Impossible d'extraire un panoID. Verifiez l'URL.")
+                continue
+
+            meta = parse_url_metadata(raw) if raw.startswith("http") else {
+                "pano_type": 0, "width": None, "height": None, "photo_url": None
+            }
+
+            pano_type  = meta["pano_type"]
+            type_label = PANO_TYPE_LABELS.get(pano_type, f"Type inconnu ({pano_type})")
+
+            print()
+            print("=" * 62)
+            print(f"  PanoID   : {pano_id}")
+            print(f"  Type     : {type_label}")
+            if meta["width"] and meta["height"]:
+                print(f"  Res. max : {meta['width']} x {meta['height']} px")
+            print("=" * 62)
+
+            # -- Choix du zoom
+            if pano_type == 0:
+                zoom = ask_zoom()
+            else:
+                zoom = DEFAULT_ZOOM
+                print()
+                print("  (Photo sphere : zoom sans effet, resolution d'origine utilisee)")
+
+            # -- Telechargement
+            if pano_type == 0:
+                panorama = download_streetview_tiles(session, pano_id, zoom)
+                output   = f"panorama_{pano_id}_z{zoom}.jpg"
+            else:
+                panorama = download_photo_sphere(
+                    session,
+                    meta["photo_url"],
+                    meta["width"],
+                    meta["height"],
+                )
+                output = f"panorama_{pano_id}.jpg"
+
+            if panorama is None:
+                print("  Echec du telechargement. Essayez une autre URL.")
+                continue
+
+            # -- Sauvegarde
+            print(f"  Sauvegarde -> {output}")
+            panorama.save(output, "JPEG", quality=JPEG_QUALITY)
+
+            w, h    = panorama.size
+            size_mb = os.path.getsize(output) / (1024 * 1024)
+            ratio   = w / h if h else 0
+
+            print()
+            print("=" * 62)
+            print(f"  TERMINE  --  {output}")
+            print(f"  Dimensions : {w} x {h} px")
+            print(f"  Ratio      : {ratio:.2f}:1  (cible 2.00:1)")
+            print(f"  Taille     : {size_mb:.1f} Mo")
+            print("=" * 62)
+            print()
+            print("  Utilisable comme carte spherique dans 3ds Max + V-Ray.")
+
+
+if __name__ == "__main__":
+    main()
