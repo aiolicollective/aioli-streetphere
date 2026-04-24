@@ -1,1 +1,108 @@
-QGVjaG8gb2ZmCjo6ID09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQo6OiAgc2V0dXAuYmF0ICDigJQgIEluc3RhbGxhdGlvbiBkZSBsJ2Vudmlyb25uZW1lbnQgdmlydHVlbAo6Ogo6OiAgQ2hlcmNoZSBQeXRob24gYXV0b21hdGlxdWVtZW50LiBTaSBpbnRyb3V2YWJsZSwgZGVtYW5kZQo6OiAgbGUgY2hlbWluIGEgbCd1dGlsaXNhdGV1ci4KOjogIFJpZW4gbidlc3QgbW9kaWZpZSBlbiBkZWhvcnMgZHUgZG9zc2llciBjb3VyYW50Lgo6OiA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQoKZWNoby4KZWNobyA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09CmVjaG8gICBTdHJlZXQgVmlldyBQYW5vcmFtYSBEb3dubG9hZGVyICBefCAgU2V0dXAKZWNobyA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09CmVjaG8uCgo6OiDigIIgU2kgbGUgdmVudiBleGlzdGUgZGVqYSwgcGFzc2VyIGRpcmVjdGVtZW50IGEgcGlwCmlmIGV4aXN0IHZlbnZcU2NyaXB0c1xweXRob24uZXhlICgKICAgIGVjaG8gIFtJTkZPXSB2ZW52IGRlamEgcHJlc2VudCwgbWlzZSBhIGpvdXIgZGVzIGRlcGVuZGFuY2VzLi4uCiAgICBlY2hvLgogICAgZ290byA6aW5zdGFsbF9kZXBzCikKCjo6IOKAoiBSZWNoZXJjaGUgYXV0b21hdGlxdWUgZGUgUHl0aG9uCnNldCBQWVRIT05fQ01EPQoKOjogMS4gTGFuY2V1ciBXaW5kb3dzIChweSkKcHkgLS12ZXJzaW9uID5udWwgMj4mMQppZiBub3QgZXJyb3JsZXZlbCAxICggc2V0IFBZVEhPTl9DTUQ9cHkmIGdvdG8gOmZvdW5kX3B5dGhvbiApCgo6OiAyLiBweXRob24gZGFucyBsZSBQQVRICnB5dGhvbiAtLXZlcnNpb24gPm51bCAyPiYxCmlmIG5vdCBlcnJvcmxldmVsIDEgKCBzZXQgUFlUSE9OX0NNRD1weXRob24mIGdvdG8gOmZvdW5kX3B5dGhvbiApCgo6OiAzLiBweXRob24zIGRhbnMgbGUgUEFUSApweXRob24zIC0tdmVyc2lvbiA+bnVsIDI+JjEKaWYgbm90IGVycm9ybGV2ZWwgMSAoIHNldCBQWVRIT05fQ01EPXB5dGhvbjMmIGdvdG8gOmZvdW5kX3B5dGhvbiApCgo6OiA0LiBDaGVtaW5zIGNvdXJhbnRzCmZvciAlJVAgaW4gKAogICAgIkQ6XFB5dGhvblxQeXRob24zMTJccHl0aG9uLmV4ZSIKICAgICJEOlxQeXRob25cUHl0aG9uMzEwXHB5dGhvbi5leGUiCiAgICAiQzpcUHl0aG9uMzEyXHB5dGhvbi5leGUiCiAgICAiQzpcUHl0aG9uMzEwXHB5dGhvbi5leGUiCiAgICAiJUxPQ0FMQVBQREFUQSVWUHJVZ3JhbXNcUHl0aG9uXFB5dGhvbjMxMlxweXRob24uZXhlIgogICAgIiVMT0NBTEFQUERBVEElXFByb2dyYW1zXFB5dGhvblxQeXRob24zMTBccHl0aG9uLmV4ZSIKKSBkbyAoCiAgICBpZiBleGlzdCAlJVAgKCBzZXQgUFlUSE9OX0NNRD0lJVAgJiBnb3RvIDpmb3VuZF9weXRob24gKQopCgo6OiDigIIgUHl0aG9uIG5vbiB0cm91dmUgOiBkZW1hbmRlciBsZSBjaGVtaW4KZWNobyAgWyFdIFB5dGhvbiBpbnRyb3V2YWJsZSBhdXRvbWF0aXF1ZW1lbnQuCmVjaG8uCmVjaG8gIEVudHJleiBlbGUgY2hlbWluIGNvbXBsZXQgdmVycyBweXRob24uZXhlCmVjaG8gIEV4ZW1wbGUgOiBEOlxQeXRob25cUHl0aG9uMzEyXHB5dGhvbi5leGUKZWNoby4Kc2V0IC9wIFBZVEhPTl9DTUQ9IiAgQ2hlbWluID4gIgoKOjogVmVyaWZpZXIgcXVlIGxlIGNoZW1pbgppZiBub3QgZXhpc3QgIiVQWVRIT05fQ01EJSIgKAogICAgZWNoby4KICAgIGVjaG8gIFtFUlJFVVJdIEZpY2hpZXIgaW50cm91dmFibGUgOiAlUFlUSE9OX0NNRCUKICAgIGVjaG8gIFZlcmlmaWV6IGxlIGNoZW1pbiBldCByZWxhbmNleiBzZXR1cC5iYXQuCiAgICBwYXVzZQogICAgZXhpdCAvYiAxCikKCjpmb3VuZF9weXRob24KZm9yIC9mICJkZWxpbXM9IiAlJVYgaW4gKCciJVBZVEhPTl9DTUQlIiAtLXZlcnNpb24gMl4+XiYxJykgZG8gc2V0IFBZX1ZFUlNJT049JSVWCmVjaG8gIFtPS10gUHl0aG9uIGRldGVjdGUgOiAlUFlUSE9OX0NNRCUKZWNobyAgICAgICBWZXJzaW9uICAgICAgICA6ICVQWV9WRVJTSU9OJQplY2hvLgplY2hvICAqKiogTm90ZXogY2UgY2hlbWluIHBvdXIgdm9zIGF1dHJlcyBtYWNoaW5lcyA6ICoqKgplY2hvICAqKiogJVBZVEhPTl9DTUQlICoqKgplY2hvLgoKZWNobyAgWzEvM10gQ3JlYXRpb24gZHUgdmVudiBkYW5zIC5cdmVudlwgLi4uCiIlUFlUSE9OX0NNRCUiIC1tIHZlbnYgdmVudgppZiBlcnJvcmxldmVsIDEgKAogICAgZWNobyAgW0VSUkVVUl0gSW1wb3NzaWJsZSBkZSBjcmVlciBsZSB2ZW52LgogICAgcGF1c2UKICAgIGV4aXQgL2IgMQopCmVjaG8gIFtPS10gdmVudiBjcmVlLgplY2hvLgoKOmluc3RhbGxfZGVwcwplY2hvICBbMi8zXSBJbnN0YWxsYXRpb24gZGUgcmVxdWVzdHMgKyBQaWxsb3cuLi4KY2FsbCB2ZW52XFNjcmlwdHNcYWN0aXZhdGUuYmF0CnBpcCBpbnN0YWxsIC0tdXBncmFkZSBwaXAgLS1xdWlldApwaXAgaW5zdGFsbCAtciByZXF1aXJlbWVudHMudHh0CmlmIGVycm9ybGV2ZWwgMSAoCiAgICBlY2hvICBbRVJSRVVSXSBFY2hlYyBwaXAuIFZlcmlmaWV6IHZvdHJlIGNvbm5leGlvbiBJbnRlcm5ldC4KICAgIHBhdXNlCiAgICBleGl0IC9iIDEKKQplY2hvICBbT0tdIERlcGVuZGFuY2VzIGluc3RhbGxlZXMuCmVjaG8uCgplY2hvICBbMy8zXSBMYW5jZW1lbnQgZGUgc3RyZWV0dmlldy5weS4uLgplY2hvLgpweXRob24gc3RyZWV0dmlldy5weQoKZWNoby4KcGF1c2UK
+@echo off
+:: ============================================================
+::  setup.bat  —  Installation de l'environnement virtuel
+::
+::  Cherche Python automatiquement. Si introuvable, demande
+::  le chemin a l'utilisateur.
+::  Rien n'est modifie en dehors du dossier courant.
+:: ============================================================
+
+echo.
+echo ============================================================
+echo   Street View Panorama Downloader  ^|  Setup
+echo ============================================================
+echo.
+
+:: ── Si le venv existe deja, passer directement a pip ────────
+if exist venv\Scripts\python.exe (
+    echo  [INFO] venv deja present, mise a jour des dependances...
+    echo.
+    goto :install_deps
+)
+
+:: ── Recherche automatique de Python ─────────────────────────
+set PYTHON_CMD=
+
+:: 1. Lanceur Windows (py)
+py --version >nul 2>&1
+if not errorlevel 1 ( set PYTHON_CMD=py& goto :found_python )
+
+:: 2. python dans le PATH
+python --version >nul 2>&1
+if not errorlevel 1 ( set PYTHON_CMD=python& goto :found_python )
+
+:: 3. python3 dans le PATH
+python3 --version >nul 2>&1
+if not errorlevel 1 ( set PYTHON_CMD=python3& goto :found_python )
+
+:: 4. Chemins courants
+for %%P in (
+    "D:\Python\Python312\python.exe"
+    "D:\Python\Python310\python.exe"
+    "C:\Python312\python.exe"
+    "C:\Python310\python.exe"
+    "%LOCALAPPDATA%\Programs\Python\Python312\python.exe"
+    "%LOCALAPPDATA%\Programs\Python\Python310\python.exe"
+) do (
+    if exist %%P ( set PYTHON_CMD=%%P & goto :found_python )
+)
+
+:: ── Python non trouve : demander le chemin ───────────────────
+echo  [!] Python introuvable automatiquement.
+echo.
+echo  Entrez le chemin complet vers python.exe
+echo  Exemple : D:\Python\Python312\python.exe
+echo.
+set /p PYTHON_CMD="  Chemin > "
+
+:: Verifier que le chemin entre est valide
+if not exist "%PYTHON_CMD%" (
+    echo.
+    echo  [ERREUR] Fichier introuvable : %PYTHON_CMD%
+    echo  Verifiez le chemin et relancez setup.bat.
+    pause
+    exit /b 1
+)
+
+:found_python
+:: ── Afficher la version trouvee ──────────────────────────────
+for /f "delims=" %%V in ('"%PYTHON_CMD%" --version 2^>^&1') do set PY_VERSION=%%V
+echo  [OK] Python detecte : %PYTHON_CMD%
+echo       Version        : %PY_VERSION%
+echo.
+echo  *** Notez ce chemin pour vos autres machines : ***
+echo  *** %PYTHON_CMD% ***
+echo.
+
+:: ── Creer le venv ────────────────────────────────────────────
+echo  [1/3] Creation du venv dans .\venv\ ...
+"%PYTHON_CMD%" -m venv venv
+if errorlevel 1 (
+    echo  [ERREUR] Impossible de creer le venv.
+    pause
+    exit /b 1
+)
+echo  [OK] venv cree.
+echo.
+
+:: ── Installer les dependances ────────────────────────────────
+:install_deps
+echo  [2/3] Installation de requests + Pillow...
+call venv\Scripts\activate.bat
+pip install --upgrade pip --quiet
+pip install -r requirements.txt
+if errorlevel 1 (
+    echo  [ERREUR] Echec pip. Verifiez votre connexion Internet.
+    pause
+    exit /b 1
+)
+echo  [OK] Dependances installees.
+echo.
+
+:: ── Lancement ────────────────────────────────────────────────
+echo  [3/3] Lancement de streetview.py...
+echo.
+python streetview.py
+
+echo.
+pause
