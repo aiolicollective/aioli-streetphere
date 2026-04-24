@@ -1,1 +1,8 @@
-QGVjaG8gb2ZmCjo6ID09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQo6OiAgcnVuLmJhdCAgLS0gTGFuY2UgbGUgc2NyaXB0IGRhbnMgbGUgdmVudiAoYXByZXMgc2V0dXApCjo6ID09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQpjYWxsIHZlbnZcU2NyaXB0c1xhY3RpdmF0ZS5iYXQKcHl0aG9uIHN0cmVldHZpZXcucHkKZWNoby4KcGF1c2UK
+@echo off
+:: ============================================================
+::  run.bat  —  Lance le script dans le venv (apres setup)
+:: ============================================================
+call venv\Scripts\activate.bat
+python streetview.py
+echo.
+pause
