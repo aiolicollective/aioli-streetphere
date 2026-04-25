@@ -47,13 +47,17 @@ MAX_WORKERS  = 8
 #  DONNEES INTERNES
 # ==============================================================================
 
+# Grille de tuiles par niveau de zoom.
+# Note : zoom 5 (26x13) est intentionnellement absent du menu car Google
+# ne sert pas toutes les tuiles a ce niveau -- les rangees extremes (ciel/nadir)
+# retournent 403, ce qui produit des bandes noires et une sphere non seamless.
+# Zoom 4 (16x8) est le maximum fiable.
 GRID = {
     0: (1,  1),
     1: (2,  1),
     2: (4,  2),
     3: (8,  4),
     4: (16, 8),
-    5: (26, 13),
 }
 
 TILE_SIZE        = 512
@@ -127,7 +131,6 @@ def ask_zoom():
     print()
     print("    3  ->   4 096 x  2 048 px   32 tuiles   basse resolution")
     print("    4  ->   8 192 x  4 096 px  128 tuiles   recommande  <--")
-    print("    5  ->  13 312 x  6 656 px  338 tuiles   haute resolution, lent")
     print()
 
     while True:
@@ -136,10 +139,10 @@ def ask_zoom():
         if raw == "":
             return DEFAULT_ZOOM
 
-        if raw in ("3", "4", "5"):
+        if raw in ("3", "4"):
             return int(raw)
 
-        print(f"  Valeur invalide. Entrez 3, 4 ou 5 (ou Entree pour {DEFAULT_ZOOM}).")
+        print(f"  Valeur invalide. Entrez 3 ou 4 (ou Entree pour {DEFAULT_ZOOM}).")
 
 
 # ==============================================================================
