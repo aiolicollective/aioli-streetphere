@@ -5,7 +5,7 @@ prete a utiliser comme sphere d'environnement dans V-Ray, 3ds Max, Blender, Cine
 
 Deux modes detectes automatiquement :
 
-- Street View officiel : assemblage de tuiles via l'API Google (jusqu'a 8 192 x 4 096 px)
+- Street View officiel : assemblage de tuiles via l'API Google (jusqu'a 13 312 x 6 656 px)
 - Photo sphere utilisateur : telechargement direct depuis le CDN Google
 
 ---
@@ -63,15 +63,18 @@ Street View ne livre pas le panorama en une seule image : il est decoupe en tuil
 512x512 px que le script telecharge et assemble. Le zoom determine combien de tuiles
 sont demandees, donc la taille de l'image finale.
 
-| ZOOM | Resolution         | Nb de tuiles | Usage                       |
-|------|--------------------|--------------|-----------------------------|
-| 3    | 4 096 x 2 048 px   | 32           | Apercu rapide               |
-| 4    | 8 192 x 4 096 px   | 128          | Recommande (V-Ray, Blender) |
+| ZOOM | Resolution          | Nb de tuiles | Usage                        |
+|------|---------------------|--------------|------------------------------|
+| 3    | 4 096 x 2 048 px    | 32           | Apercu rapide                |
+| 4    | 8 192 x 4 096 px    | 128          | Recommande (V-Ray, Blender)  |
+| 5    | 13 312 x 6 656 px   | 338          | Haute resolution             |
 
-Le zoom 4 est le maximum fiable : toutes les tuiles sont disponibles et l'image est
-seamless. Un zoom plus eleve (zoom 5) existe techniquement mais Google ne sert pas
-toutes les tuiles a ce niveau -- les zones extremes (ciel/sol) retournent des erreurs
-et produisent des bandes noires qui cassent la sphere. Il n'est donc pas propose.
+Le zoom 4 est le maximum fiable : toutes les tuiles sont disponibles, image seamless garantie.
+
+Le zoom 5 produit une image plus grande mais Google ne fournit pas toujours toutes les tuiles
+a ce niveau -- les zones extremes (ciel/sol) peuvent retourner des erreurs et rester noires
+dans l'image finale. L'image garde son ratio 2:1 et reste utilisable, mais la sphere peut
+presenter des artefacts aux poles. Le programme affiche un avertissement si zoom 5 est choisi.
 
 Note : ce parametre ne s'applique qu'au Street View officiel. Pour les photos spheres
 utilisateur, la resolution est celle d'origine de la photo.
