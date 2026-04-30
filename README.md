@@ -92,6 +92,44 @@ utilisateur, la resolution est celle d'origine de la photo.
 
 ---
 
+## Outil complementaire : builder.html
+
+Un viewer 360° autonome est inclus dans le repo. Independant du script Python,
+il fonctionne entierement en local dans un navigateur -- aucune installation,
+aucun envoi de fichier sur Internet.
+
+Deux usages :
+
+- Visualiser n'importe quelle image equirectangulaire 2:1 dans un viewer immersif
+  (qu'elle vienne du script ou d'ailleurs)
+- Generer un viewer HTML autonome avec l'image embed dedans en base64. Pratique
+  pour partager un rendu sous NDA : un seul fichier a envoyer, le client double-clique
+  et se retrouve directement en immersion, sans rien installer
+
+### Utilisation
+
+1. Double-cliquez sur builder.html
+2. Glissez-deposez votre image 2:1 (JPEG, PNG ou WebP), ou cliquez pour parcourir
+3. Explorez : drag pour regarder, molette pour zoomer
+4. Pour exporter un viewer autonome : bouton fleche-bas en bas a droite, ou touche E
+
+Le HTML exporte porte le nom de l'image source et integre cette derniere encodee
+en base64. Aucune dependance externe a part Three.js, charge depuis un CDN au premier
+lancement et mis en cache ensuite.
+
+Le ratio 2:1 est verifie automatiquement -- une image au mauvais ratio est refusee
+proprement plutot que rendue de maniere deformee.
+
+### Raccourcis
+
+| Touche | Action            |
+|--------|-------------------|
+| R      | Recentrer la vue  |
+| F      | Plein ecran       |
+| E      | Exporter en HTML  |
+
+---
+
 ## Structure des fichiers
 
     .
@@ -99,6 +137,7 @@ utilisateur, la resolution est celle d'origine de la photo.
     +-- requirements.txt          Librairies Python (requests, Pillow)
     +-- setup.bat                 Installation + 1er lancement
     +-- run.bat                   Lancement seul (fois suivantes)
+    +-- builder.html              Viewer 360° + exporteur HTML autonome (independant)
     +-- venv/                     Cree au 1er lancement, ne pas modifier
     +-- tiles/                    Tuiles telechargees (intermediaires)
     +-- panorama_[ID]_z[zoom].jpg Resultat final (Street View officiel)

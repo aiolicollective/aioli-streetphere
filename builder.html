@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>/ai.oli — Spherical Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@200;300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #000000;
+    --fg: #ffffff;
+    --muted: rgba(255, 255, 255, 0.5);
+    --line: rgba(255, 255, 255, 0.14);
+    --accent: #ffffff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    -webkit-font-smoothing: antialiased;
+    user-select: none; -webkit-user-select: none;
+    touch-action: none;
+  }
+  #stage { position: fixed; inset: 0; cursor: grab; }
+  #stage.dragging { cursor: grabbing; }
+  #stage canvas { display: block; }
+
+  #intro {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 20;
+    transition: opacity 0.9s ease, visibility 0.9s ease;
+    padding: 2rem;
+  }
+  #intro.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+  .mark {
+    font-weight: 300;
+    font-size: clamp(2.2rem, 6vw, 4.2rem);
+    letter-spacing: -0.02em; line-height: 1;
+    display: inline-flex; align-items: baseline;
+  }
+  .mark .slash { font-weight: 400; }
+  .mark .cursor {
+    display: inline-block;
+    width: 0.55em; height: 1em;
+    margin-left: 0.2em;
+    background: var(--accent);
+    transform: translateY(0.12em);
+    animation: blink 1.05s steps(1, end) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .sub {
+    margin-top: 1.5rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    font-weight: 300;
+  }
+
+  /* Drop zone */
+  #dropzone {
+    margin-top: 3rem;
+    padding: 2.5rem 3rem;
+    border: 1px dashed var(--line);
+    cursor: pointer;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 1rem;
+    transition: border-color 0.3s, background 0.3s;
+    min-width: min(420px, 90vw);
+    text-align: center;
+  }
+  #dropzone:hover, #dropzone.over {
+    border-color: var(--fg);
+    background: rgba(255, 255, 255, 0.02);
+  }
+  .dz-icon {
+    width: 28px; height: 28px;
+    stroke: currentColor; fill: none;
+    stroke-width: 1; opacity: 0.7;
+  }
+  .dz-main {
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--fg);
+  }
+  .dz-or {
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .dz-or u { text-decoration: underline; text-underline-offset: 4px; color: var(--fg); }
+  #fileInput { display: none; }
+
+  /* Loading state */
+  .progress {
+    margin-top: 2rem;
+    width: 200px; height: 1px;
+    background: var(--line);
+    overflow: hidden; position: relative;
+    display: none;
+  }
+  .progress.visible { display: block; }
+  .progress-bar {
+    position: absolute; inset: 0;
+    background: var(--fg);
+    transform-origin: left;
+    transform: scaleX(0);
+    transition: transform 0.4s ease;
+  }
+  .progress-text {
+    margin-top: 0.8rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    color: var(--muted);
+    height: 1em;
+    text-transform: uppercase;
+    display: none;
+  }
+  .progress-text.visible { display: block; }
+
+  #error {
+    margin-top: 1.5rem;
+    padding: 0.7rem 1.2rem;
+    border: 1px solid #ff5040;
+    color: #ff5040;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    display: none;
+  }
+  #error.visible { display: block; }
+
+  /* In-view UI */
+  #hint {
+    position: fixed;
+    bottom: 2.5rem; left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--muted);
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    pointer-events: none;
+    text-align: center;
+    white-space: nowrap;
+  }
+  #hint.visible { opacity: 1; }
+  #hint.fade { opacity: 0; }
+
+  #controls {
+    position: fixed;
+    bottom: 1.5rem; right: 1.5rem;
+    display: flex; gap: 0.5rem;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+  }
+  #controls.visible { opacity: 1; }
+
+  .btn {
+    width: 42px; height: 42px;
+    border: 1px solid var(--line);
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: var(--fg);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: border-color 0.25s, background 0.25s;
+  }
+  .btn:hover {
+    border-color: var(--fg);
+    background: rgba(0, 0, 0, 0.75);
+  }
+  .btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.2; }
+  .btn.primary { border-color: var(--fg); }
+  .btn.primary:hover { background: rgba(255, 255, 255, 0.08); }
+
+  #brand {
+    position: fixed;
+    top: 1.5rem; left: 1.75rem;
+    font-weight: 300;
+    font-size: 0.78rem;
+    letter-spacing: 0;
+    color: var(--fg);
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    pointer-events: none;
+    max-width: calc(100vw - 3rem);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #brand.visible { opacity: 0.85; }
+  #brand .slash { font-weight: 400; }
+  #brand .sep { color: var(--muted); margin: 0 0.5em; }
+  #brand .filename { color: var(--fg); text-transform: lowercase; }
+
+  /* Toast for export feedback */
+  #toast {
+    position: fixed;
+    top: 1.5rem; left: 50%;
+    transform: translate(-50%, -10px);
+    padding: 0.6rem 1.2rem;
+    border: 1px solid var(--line);
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--fg);
+    z-index: 30;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  #toast.visible { opacity: 1; transform: translate(-50%, 0); }
+</style>
+</head>
+<body>
+
+<div id="stage"></div>
+
+<div id="brand">
+  <span class="filename" id="brandFilename"></span><span class="slash">/</span>ai.oli
+</div>
+
+<div id="intro">
+  <div class="mark"><span class="slash">/</span>ai.oli<span class="cursor"></span></div>
+  <div class="sub">// Spherical Builder</div>
+
+  <label id="dropzone" for="fileInput">
+    <svg class="dz-icon" viewBox="0 0 24 24">
+      <path d="M12 3v14M5 10l7-7 7 7M4 21h16"/>
+    </svg>
+    <span class="dz-main">Glissez une image equirectangulaire 2:1</span>
+    <span class="dz-or">ou <u>parcourir</u></span>
+    <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp">
+  </label>
+
+  <div class="progress" id="progress"><div class="progress-bar" id="bar"></div></div>
+  <div class="progress-text" id="ptext"></div>
+  <div id="error"></div>
+</div>
+
+<div id="hint">Glissez pour explorer  -  Glissez un fichier pour changer  -  Molette pour zoomer</div>
+
+<div id="controls">
+  <button class="btn" id="resetBtn" title="Recentrer la vue (R)">
+    <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+  </button>
+  <button class="btn" id="fsBtn" title="Plein ecran (F)">
+    <svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+  </button>
+  <button class="btn primary" id="exportBtn" title="Exporter en HTML autonome (E)">
+    <svg viewBox="0 0 24 24"><path d="M12 4v12M6 10l6 6 6-6M4 20h16"/></svg>
+  </button>
+</div>
+
+<div id="toast"></div>
+
+<img id="panorama" alt="" style="display:none">
+
+<!-- Embedded viewer template, used at export time. -->
+<script type="text/template" id="viewer-template"><!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>__TITLE__</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@200;300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #000000;
+    --fg: #ffffff;
+    --muted: rgba(255, 255, 255, 0.5);
+    --line: rgba(255, 255, 255, 0.14);
+    --accent: #ffffff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    -webkit-font-smoothing: antialiased;
+    user-select: none; -webkit-user-select: none;
+    touch-action: none;
+  }
+  #stage { position: fixed; inset: 0; cursor: grab; }
+  #stage.dragging { cursor: grabbing; }
+  #stage canvas { display: block; }
+
+  #intro {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 20;
+    transition: opacity 1.2s ease, visibility 1.2s ease;
+  }
+  #intro.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+  .mark {
+    font-weight: 300;
+    font-size: clamp(2.2rem, 6vw, 4.2rem);
+    letter-spacing: -0.02em; line-height: 1;
+    display: inline-flex; align-items: baseline;
+  }
+  .mark .slash { font-weight: 400; }
+  .mark .cursor {
+    display: inline-block;
+    width: 0.55em; height: 1em;
+    margin-left: 0.2em;
+    background: var(--accent);
+    transform: translateY(0.12em);
+    animation: blink 1.05s steps(1, end) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .sub {
+    margin-top: 1.5rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    font-weight: 300;
+  }
+
+  .progress {
+    margin-top: 3rem;
+    width: 200px; height: 1px;
+    background: var(--line);
+    overflow: hidden; position: relative;
+  }
+  .progress-bar {
+    position: absolute; inset: 0;
+    background: var(--fg);
+    transform-origin: left;
+    transform: scaleX(0);
+    transition: transform 0.4s ease;
+  }
+  .progress-text {
+    margin-top: 0.8rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    color: var(--muted);
+    height: 1em;
+    text-transform: uppercase;
+  }
+
+  #hint {
+    position: fixed;
+    bottom: 2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--muted);
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    pointer-events: none;
+    text-align: center;
+    white-space: nowrap;
+  }
+  #hint.visible { opacity: 1; }
+  #hint.fade { opacity: 0; }
+
+  #controls {
+    position: fixed;
+    bottom: 1.5rem; right: 1.5rem;
+    display: flex; gap: 0.5rem;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+  }
+  #controls.visible { opacity: 1; }
+
+  .btn {
+    width: 42px; height: 42px;
+    border: 1px solid var(--line);
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: var(--fg);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: border-color 0.25s, background 0.25s;
+  }
+  .btn:hover {
+    border-color: var(--accent);
+    background: rgba(0, 0, 0, 0.75);
+  }
+  .btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.2; }
+
+  #brand {
+    position: fixed;
+    top: 1.5rem; left: 1.75rem;
+    font-weight: 300;
+    font-size: 0.78rem;
+    letter-spacing: 0;
+    color: var(--fg);
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    pointer-events: none;
+    max-width: calc(100vw - 3rem);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #brand.visible { opacity: 0.85; }
+  #brand .slash { font-weight: 400; }
+  #brand .sep { color: var(--muted); margin: 0 0.5em; }
+  #brand .filename { color: var(--fg); text-transform: lowercase; }
+</style>
+</head>
+<body>
+
+<div id="stage"></div>
+
+<div id="brand">
+  <span class="filename">__FILENAME_NOEXT__</span><span class="slash">/</span>ai.oli
+</div>
+
+<div id="intro">
+  <div class="mark"><span class="slash">/</span>ai.oli<span class="cursor"></span></div>
+  <div class="sub">// Spherical Preview</div>
+  <div class="progress"><div class="progress-bar" id="bar"></div></div>
+  <div class="progress-text" id="ptext">Initialisation</div>
+</div>
+
+<div id="hint">Glissez pour explorer  -  Molette pour zoomer</div>
+
+<div id="controls">
+  <button class="btn" id="resetBtn" title="Recentrer la vue (R)">
+    <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+  </button>
+  <button class="btn" id="fsBtn" title="Plein ecran (F)">
+    <svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+  </button>
+</div>
+
+<img id="panorama" alt="" style="display:none" src="data:image/jpeg;base64,__B64__">
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+<\/script>
+
+<script type="module">
+import * as THREE from 'three';
+const stage=document.getElementById('stage'),intro=document.getElementById('intro'),bar=document.getElementById('bar'),ptext=document.getElementById('ptext'),hint=document.getElementById('hint'),controls=document.getElementById('controls'),brand=document.getElementById('brand'),resetBtn=document.getElementById('resetBtn'),fsBtn=document.getElementById('fsBtn'),panoImg=document.getElementById('panorama');
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,1100);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;stage.appendChild(renderer.domElement);
+const geometry=new THREE.SphereGeometry(500,96,64);geometry.scale(-1,1,1);
+let mesh=null,lon=0,lat=0,targetLon=0,targetLat=0;const initialFov=75;let targetFov=initialFov;
+let dragging=false,lastX=0,lastY=0;const pointers=new Map();let pinchStart=0,pinchFovStart=0;
+function setDragging(v){dragging=v;stage.classList.toggle('dragging',v);}
+stage.addEventListener('pointerdown',(e)=>{pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointers.size===1){setDragging(true);lastX=e.clientX;lastY=e.clientY;}else if(pointers.size===2){setDragging(false);const[a,b]=[...pointers.values()];pinchStart=Math.hypot(a.x-b.x,a.y-b.y);pinchFovStart=camera.fov;}stage.setPointerCapture(e.pointerId);});
+stage.addEventListener('pointermove',(e)=>{if(!pointers.has(e.pointerId))return;pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointers.size===1&&dragging){const dx=e.clientX-lastX,dy=e.clientY-lastY;lastX=e.clientX;lastY=e.clientY;const speed=camera.fov/75*0.12;targetLon-=dx*speed;targetLat+=dy*speed;targetLat=Math.max(-85,Math.min(85,targetLat));fadeHint();}else if(pointers.size===2){const[a,b]=[...pointers.values()];const dist=Math.hypot(a.x-b.x,a.y-b.y);targetFov=Math.max(25,Math.min(95,pinchFovStart*pinchStart/dist));}});
+function endP(e){pointers.delete(e.pointerId);if(pointers.size<2)pinchStart=0;if(pointers.size===0)setDragging(false);}
+stage.addEventListener('pointerup',endP);stage.addEventListener('pointercancel',endP);stage.addEventListener('pointerleave',endP);
+stage.addEventListener('wheel',(e)=>{e.preventDefault();targetFov=Math.max(25,Math.min(95,targetFov+e.deltaY*0.04));fadeHint();},{passive:false});
+addEventListener('keydown',(e)=>{if(e.key==='r'||e.key==='R')resetView();if(e.key==='f'||e.key==='F')toggleFs();});
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+function animate(){requestAnimationFrame(animate);lon+=(targetLon-lon)*0.12;lat+=(targetLat-lat)*0.12;camera.fov+=(targetFov-camera.fov)*0.15;camera.updateProjectionMatrix();const phi=THREE.MathUtils.degToRad(90-lat),theta=THREE.MathUtils.degToRad(lon);camera.lookAt(500*Math.sin(phi)*Math.cos(theta),500*Math.cos(phi),500*Math.sin(phi)*Math.sin(theta));renderer.render(scene,camera);}
+animate();
+function setProgress(p,l){bar.style.transform=`scaleX(${p})`;if(l!==undefined)ptext.textContent=l;}
+let hintFaded=false;function fadeHint(){if(hintFaded)return;hintFaded=true;hint.classList.add('fade');}
+function reveal(){setTimeout(()=>{intro.classList.add('hidden');controls.classList.add('visible');brand.classList.add('visible');hint.classList.add('visible');setTimeout(fadeHint,4500);},350);}
+function resetView(){targetLon=0;targetLat=0;targetFov=initialFov;}resetBtn.addEventListener('click',resetView);
+function toggleFs(){if(!document.fullscreenElement)document.documentElement.requestFullscreen?.();else document.exitFullscreen?.();}fsBtn.addEventListener('click',toggleFs);
+function buildSphere(){setProgress(0.85,'Preparation');const t=new THREE.Texture(panoImg);t.colorSpace=THREE.SRGBColorSpace;t.minFilter=THREE.LinearFilter;t.magFilter=THREE.LinearFilter;t.generateMipmaps=false;t.anisotropy=renderer.capabilities.getMaxAnisotropy();t.needsUpdate=true;mesh=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({map:t}));mesh.rotation.y=Math.PI;scene.add(mesh);renderer.render(scene,camera);setProgress(1,'Pret');reveal();}
+setProgress(0.15,'Decodage');
+if(panoImg.complete&&panoImg.naturalWidth>0){if(panoImg.decode)panoImg.decode().then(buildSphere).catch(buildSphere);else requestAnimationFrame(buildSphere);}
+else{panoImg.addEventListener('load',()=>{setProgress(0.5,'Decodage');if(panoImg.decode)panoImg.decode().then(buildSphere).catch(buildSphere);else buildSphere();});panoImg.addEventListener('error',()=>{setProgress(0,'Erreur');});}
+<\/script>
+</body>
+</html></script>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+const stage         = document.getElementById('stage');
+const intro         = document.getElementById('intro');
+const dropzone      = document.getElementById('dropzone');
+const fileInput     = document.getElementById('fileInput');
+const progressEl    = document.getElementById('progress');
+const bar           = document.getElementById('bar');
+const ptext         = document.getElementById('ptext');
+const errorEl       = document.getElementById('error');
+const hint          = document.getElementById('hint');
+const controls      = document.getElementById('controls');
+const brand         = document.getElementById('brand');
+const brandFilename = document.getElementById('brandFilename');
+const resetBtn      = document.getElementById('resetBtn');
+const fsBtn         = document.getElementById('fsBtn');
+const exportBtn     = document.getElementById('exportBtn');
+const toast         = document.getElementById('toast');
+const panoImg       = document.getElementById('panorama');
+
+// Three.js scene
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 1100);
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+stage.appendChild(renderer.domElement);
+
+const geometry = new THREE.SphereGeometry(500, 96, 64);
+geometry.scale(-1, 1, 1);
+
+let mesh = null;
+let lon = 0, lat = 0, targetLon = 0, targetLat = 0;
+const initialFov = 75;
+let targetFov = initialFov;
+
+let dragging = false;
+let lastX = 0, lastY = 0;
+const pointers = new Map();
+let pinchStart = 0, pinchFovStart = 0;
+
+function setDragging(v) { dragging = v; stage.classList.toggle('dragging', v); }
+
+stage.addEventListener('pointerdown', (e) => {
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pointers.size === 1) {
+    setDragging(true);
+    lastX = e.clientX; lastY = e.clientY;
+  } else if (pointers.size === 2) {
+    setDragging(false);
+    const [a, b] = [...pointers.values()];
+    pinchStart = Math.hypot(a.x - b.x, a.y - b.y);
+    pinchFovStart = camera.fov;
+  }
+  stage.setPointerCapture(e.pointerId);
+});
+
+stage.addEventListener('pointermove', (e) => {
+  if (!pointers.has(e.pointerId)) return;
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+  if (pointers.size === 1 && dragging) {
+    const dx = e.clientX - lastX;
+    const dy = e.clientY - lastY;
+    lastX = e.clientX; lastY = e.clientY;
+    const speed = camera.fov / 75 * 0.12;
+    targetLon -= dx * speed;
+    targetLat += dy * speed;
+    targetLat = Math.max(-85, Math.min(85, targetLat));
+    fadeHint();
+  } else if (pointers.size === 2) {
+    const [a, b] = [...pointers.values()];
+    const dist = Math.hypot(a.x - b.x, a.y - b.y);
+    targetFov = Math.max(25, Math.min(95, pinchFovStart * pinchStart / dist));
+  }
+});
+
+function endP(e) {
+  pointers.delete(e.pointerId);
+  if (pointers.size < 2) pinchStart = 0;
+  if (pointers.size === 0) setDragging(false);
+}
+stage.addEventListener('pointerup', endP);
+stage.addEventListener('pointercancel', endP);
+stage.addEventListener('pointerleave', endP);
+
+stage.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  targetFov = Math.max(25, Math.min(95, targetFov + e.deltaY * 0.04));
+  fadeHint();
+}, { passive: false });
+
+addEventListener('keydown', (e) => {
+  if (e.key === 'r' || e.key === 'R') resetView();
+  if (e.key === 'f' || e.key === 'F') toggleFs();
+  if (e.key === 'e' || e.key === 'E') exportHtml();
+});
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+function animate() {
+  requestAnimationFrame(animate);
+  lon += (targetLon - lon) * 0.12;
+  lat += (targetLat - lat) * 0.12;
+  camera.fov += (targetFov - camera.fov) * 0.15;
+  camera.updateProjectionMatrix();
+  const phi = THREE.MathUtils.degToRad(90 - lat);
+  const theta = THREE.MathUtils.degToRad(lon);
+  camera.lookAt(
+    500 * Math.sin(phi) * Math.cos(theta),
+    500 * Math.cos(phi),
+    500 * Math.sin(phi) * Math.sin(theta)
+  );
+  renderer.render(scene, camera);
+}
+animate();
+
+function setProgress(p, l) {
+  progressEl.classList.add('visible');
+  ptext.classList.add('visible');
+  bar.style.transform = `scaleX(${p})`;
+  if (l !== undefined) ptext.textContent = l;
+}
+
+function showError(msg) {
+  errorEl.textContent = msg;
+  errorEl.classList.add('visible');
+  progressEl.classList.remove('visible');
+  ptext.classList.remove('visible');
+}
+
+let hintFaded = false;
+function fadeHint() {
+  if (hintFaded) return;
+  hintFaded = true;
+  hint.classList.add('fade');
+}
+
+function reveal() {
+  setTimeout(() => {
+    intro.classList.add('hidden');
+    controls.classList.add('visible');
+    brand.classList.add('visible');
+    if (!hint.classList.contains('visible')) {
+      hint.classList.add('visible');
+      setTimeout(fadeHint, 5500);
+    }
+  }, 350);
+}
+
+function resetView() { targetLon = 0; targetLat = 0; targetFov = initialFov; }
+resetBtn.addEventListener('click', resetView);
+
+function toggleFs() {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+  else document.exitFullscreen?.();
+}
+fsBtn.addEventListener('click', toggleFs);
+
+let currentBase64 = null;
+let currentMime   = 'image/jpeg';
+let currentName   = null;
+
+function loadFile(file) {
+  errorEl.classList.remove('visible');
+
+  if (!file.type.startsWith('image/')) {
+    showError('Format non supporte');
+    return;
+  }
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+    showError('Utilisez JPEG, PNG ou WebP');
+    return;
+  }
+
+  setProgress(0.1, 'Lecture');
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    const comma = dataUrl.indexOf(',');
+    currentBase64 = dataUrl.slice(comma + 1);
+    currentMime   = file.type;
+    currentName   = file.name;
+
+    setProgress(0.4, 'Decodage');
+
+    const tmpImg = new Image();
+    tmpImg.onload = () => {
+      const ratio = tmpImg.naturalWidth / tmpImg.naturalHeight;
+      if (Math.abs(ratio - 2) > 0.05) {
+        showError(`Ratio ${ratio.toFixed(2)}:1 - il faut du 2:1 equirectangulaire`);
+        currentBase64 = null;
+        return;
+      }
+
+      panoImg.src = dataUrl;
+      panoImg.onload = () => {
+        if (panoImg.decode) panoImg.decode().then(buildSphere).catch(buildSphere);
+        else buildSphere();
+      };
+
+      brandFilename.textContent = stripExt(file.name);
+    };
+    tmpImg.onerror = () => showError('Image illisible');
+    tmpImg.src = dataUrl;
+  };
+  reader.onerror = () => showError('Lecture du fichier impossible');
+  reader.readAsDataURL(file);
+}
+
+function buildSphere() {
+  setProgress(0.85, 'Preparation');
+
+  if (mesh) {
+    mesh.material.map?.dispose();
+    mesh.material.dispose();
+    scene.remove(mesh);
+  }
+
+  const t = new THREE.Texture(panoImg);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.minFilter = THREE.LinearFilter;
+  t.magFilter = THREE.LinearFilter;
+  t.generateMipmaps = false;
+  t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  t.needsUpdate = true;
+
+  mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ map: t }));
+  mesh.rotation.y = Math.PI;
+  scene.add(mesh);
+  renderer.render(scene, camera);
+
+  setProgress(1, 'Pret');
+  reveal();
+}
+
+['dragenter', 'dragover'].forEach(ev => {
+  document.addEventListener(ev, (e) => {
+    if (!e.dataTransfer?.types.includes('Files')) return;
+    e.preventDefault();
+    if (!intro.classList.contains('hidden')) dropzone.classList.add('over');
+  });
+});
+['dragleave', 'drop'].forEach(ev => {
+  document.addEventListener(ev, (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('over');
+  });
+});
+document.addEventListener('drop', (e) => {
+  const f = e.dataTransfer?.files?.[0];
+  if (f) loadFile(f);
+});
+fileInput.addEventListener('change', (e) => {
+  const f = e.target.files?.[0];
+  if (f) loadFile(f);
+});
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('visible');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => toast.classList.remove('visible'), 2200);
+}
+
+function sanitize(name) {
+  return (name || 'panorama')
+    .replace(/\.[^.]+$/, '')
+    .replace(/[^\w\-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80) || 'panorama';
+}
+
+function stripExt(name) {
+  return (name || '').replace(/\.[^.]+$/, '');
+}
+
+function exportHtml() {
+  if (!currentBase64) {
+    showToast('Charge une image d abord');
+    return;
+  }
+
+  showToast('Generation...');
+
+  const CLOSE_SCRIPT = '<' + '/script>';
+  const ESCAPED_CLOSE = '<' + '\\/script>';
+  const tplEl = document.getElementById('viewer-template');
+  let tpl = tplEl.textContent.split(ESCAPED_CLOSE).join(CLOSE_SCRIPT);
+
+  const baseName = sanitize(currentName);
+  const noExt = stripExt(currentName);
+
+  tpl = tpl
+    .replaceAll('__TITLE__', noExt + ' /ai.oli')
+    .replaceAll('__FILENAME_NOEXT__', noExt)
+    .replace('__B64__', currentBase64);
+
+  if (currentMime !== 'image/jpeg') {
+    tpl = tpl.replace('data:image/jpeg;base64,', 'data:' + currentMime + ';base64,');
+  }
+
+  const blob = new Blob([tpl], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = baseName + '.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+
+  setTimeout(() => showToast('Export OK : ' + baseName + '.html'), 50);
+}
+exportBtn.addEventListener('click', exportHtml);
+</script>
+</body>
+</html>
