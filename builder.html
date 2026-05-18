@@ -29,7 +29,7 @@
   #stage { position: fixed; inset: 0; cursor: grab; }
   #stage.dragging { cursor: grabbing; }
   #stage canvas { display: block; }
-
+ 
   #intro {
     position: fixed; inset: 0;
     background: var(--bg);
@@ -40,7 +40,7 @@
     padding: 2rem;
   }
   #intro.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-
+ 
   .mark {
     font-weight: 300;
     font-size: clamp(2.2rem, 6vw, 4.2rem);
@@ -57,7 +57,7 @@
     animation: blink 1.05s steps(1, end) infinite;
   }
   @keyframes blink { 50% { opacity: 0; } }
-
+ 
   .sub {
     margin-top: 1.5rem;
     font-size: 0.7rem;
@@ -65,7 +65,7 @@
     color: var(--muted);
     font-weight: 300;
   }
-
+ 
   /* Drop zone */
   #dropzone {
     margin-top: 3rem;
@@ -101,7 +101,7 @@
   }
   .dz-or u { text-decoration: underline; text-underline-offset: 4px; color: var(--fg); }
   #fileInput { display: none; }
-
+ 
   /* Loading state */
   .progress {
     margin-top: 2rem;
@@ -128,7 +128,7 @@
     display: none;
   }
   .progress-text.visible { display: block; }
-
+ 
   #error {
     margin-top: 1.5rem;
     padding: 0.7rem 1.2rem;
@@ -140,7 +140,7 @@
     display: none;
   }
   #error.visible { display: block; }
-
+ 
   /* In-view UI */
   #hint {
     position: fixed;
@@ -159,7 +159,7 @@
   }
   #hint.visible { opacity: 1; }
   #hint.fade { opacity: 0; }
-
+ 
   #controls {
     position: fixed;
     bottom: 1.5rem; right: 1.5rem;
@@ -169,7 +169,7 @@
     transition: opacity 0.8s ease;
   }
   #controls.visible { opacity: 1; }
-
+ 
   .btn {
     width: 42px; height: 42px;
     border: 1px solid var(--line);
@@ -188,7 +188,7 @@
   .btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.2; }
   .btn.primary { border-color: var(--fg); }
   .btn.primary:hover { background: rgba(255, 255, 255, 0.08); }
-
+ 
   #brand {
     position: fixed;
     top: 1.5rem; left: 1.75rem;
@@ -209,7 +209,7 @@
   #brand .slash { font-weight: 400; }
   #brand .sep { color: var(--muted); margin: 0 0.5em; }
   #brand .filename { color: var(--fg); text-transform: lowercase; }
-
+ 
   /* Toast for export feedback */
   #toast {
     position: fixed;
@@ -233,17 +233,17 @@
 </style>
 </head>
 <body>
-
+ 
 <div id="stage"></div>
-
+ 
 <div id="brand">
   <span class="filename" id="brandFilename"></span><span class="slash">/</span>ai.oli
 </div>
-
+ 
 <div id="intro">
   <div class="mark"><span class="slash">/</span>ai.oli<span class="cursor"></span></div>
   <div class="sub">// Spherical Builder</div>
-
+ 
   <label id="dropzone" for="fileInput">
     <svg class="dz-icon" viewBox="0 0 24 24">
       <path d="M12 3v14M5 10l7-7 7 7M4 21h16"/>
@@ -252,14 +252,14 @@
     <span class="dz-or">ou <u>parcourir</u></span>
     <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp">
   </label>
-
+ 
   <div class="progress" id="progress"><div class="progress-bar" id="bar"></div></div>
   <div class="progress-text" id="ptext"></div>
   <div id="error"></div>
 </div>
-
+ 
 <div id="hint">Glissez pour explorer  -  Glissez un fichier pour changer  -  Molette pour zoomer</div>
-
+ 
 <div id="controls">
   <button class="btn" id="resetBtn" title="Recentrer la vue (R)">
     <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
@@ -271,11 +271,11 @@
     <svg viewBox="0 0 24 24"><path d="M12 4v12M6 10l6 6 6-6M4 20h16"/></svg>
   </button>
 </div>
-
+ 
 <div id="toast"></div>
-
+ 
 <img id="panorama" alt="" style="display:none">
-
+ 
 <!-- Embedded viewer template, used at export time. -->
 <script type="text/template" id="viewer-template"><!DOCTYPE html>
 <html lang="fr">
@@ -308,7 +308,7 @@
   #stage { position: fixed; inset: 0; cursor: grab; }
   #stage.dragging { cursor: grabbing; }
   #stage canvas { display: block; }
-
+ 
   #intro {
     position: fixed; inset: 0;
     background: var(--bg);
@@ -318,7 +318,7 @@
     transition: opacity 1.2s ease, visibility 1.2s ease;
   }
   #intro.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-
+ 
   .mark {
     font-weight: 300;
     font-size: clamp(2.2rem, 6vw, 4.2rem);
@@ -335,7 +335,7 @@
     animation: blink 1.05s steps(1, end) infinite;
   }
   @keyframes blink { 50% { opacity: 0; } }
-
+ 
   .sub {
     margin-top: 1.5rem;
     font-size: 0.7rem;
@@ -343,7 +343,7 @@
     color: var(--muted);
     font-weight: 300;
   }
-
+ 
   .progress {
     margin-top: 3rem;
     width: 200px; height: 1px;
@@ -365,7 +365,7 @@
     height: 1em;
     text-transform: uppercase;
   }
-
+ 
   #hint {
     position: fixed;
     bottom: 2.5rem;
@@ -384,7 +384,7 @@
   }
   #hint.visible { opacity: 1; }
   #hint.fade { opacity: 0; }
-
+ 
   #controls {
     position: fixed;
     bottom: 1.5rem; right: 1.5rem;
@@ -394,7 +394,7 @@
     transition: opacity 0.8s ease;
   }
   #controls.visible { opacity: 1; }
-
+ 
   .btn {
     width: 42px; height: 42px;
     border: 1px solid var(--line);
@@ -411,7 +411,7 @@
     background: rgba(0, 0, 0, 0.75);
   }
   .btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.2; }
-
+ 
   #brand {
     position: fixed;
     top: 1.5rem; left: 1.75rem;
@@ -432,25 +432,33 @@
   #brand .slash { font-weight: 400; }
   #brand .sep { color: var(--muted); margin: 0 0.5em; }
   #brand .filename { color: var(--fg); text-transform: lowercase; }
+  #brand .brand-link {
+    color: inherit;
+    text-decoration: none;
+    pointer-events: auto;
+    cursor: pointer;
+  }
+  #brand .brand-link:hover,
+  #brand .brand-link:focus-visible { font-weight: 700; outline: none; }
 </style>
 </head>
 <body>
-
+ 
 <div id="stage"></div>
-
+ 
 <div id="brand">
-  <span class="filename">__FILENAME_NOEXT__</span><span class="slash">/</span>ai.oli
+  <span class="filename">__FILENAME_NOEXT__</span><a class="brand-link" href="https://aiolicollective.com/" target="_blank" rel="noopener noreferrer"><span class="slash">/</span>ai.oli</a>
 </div>
-
+ 
 <div id="intro">
   <div class="mark"><span class="slash">/</span>ai.oli<span class="cursor"></span></div>
   <div class="sub">// Spherical Preview</div>
   <div class="progress"><div class="progress-bar" id="bar"></div></div>
   <div class="progress-text" id="ptext">Initialisation</div>
 </div>
-
+ 
 <div id="hint">Glissez pour explorer  -  Molette pour zoomer</div>
-
+ 
 <div id="controls">
   <button class="btn" id="resetBtn" title="Recentrer la vue (R)">
     <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
@@ -459,13 +467,13 @@
     <svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
   </button>
 </div>
-
+ 
 <img id="panorama" alt="" style="display:none" src="data:image/jpeg;base64,__B64__">
-
+ 
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
 <\/script>
-
+ 
 <script type="module">
 import * as THREE from 'three';
 const stage=document.getElementById('stage'),intro=document.getElementById('intro'),bar=document.getElementById('bar'),ptext=document.getElementById('ptext'),hint=document.getElementById('hint'),controls=document.getElementById('controls'),brand=document.getElementById('brand'),resetBtn=document.getElementById('resetBtn'),fsBtn=document.getElementById('fsBtn'),panoImg=document.getElementById('panorama');
@@ -497,14 +505,14 @@ else{panoImg.addEventListener('load',()=>{setProgress(0.5,'Decodage');if(panoImg
 <\/script>
 </body>
 </html></script>
-
+ 
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
 </script>
-
+ 
 <script type="module">
 import * as THREE from 'three';
-
+ 
 const stage         = document.getElementById('stage');
 const intro         = document.getElementById('intro');
 const dropzone      = document.getElementById('dropzone');
@@ -522,7 +530,7 @@ const fsBtn         = document.getElementById('fsBtn');
 const exportBtn     = document.getElementById('exportBtn');
 const toast         = document.getElementById('toast');
 const panoImg       = document.getElementById('panorama');
-
+ 
 // Three.js scene
 const scene  = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 1100);
@@ -531,22 +539,22 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 stage.appendChild(renderer.domElement);
-
+ 
 const geometry = new THREE.SphereGeometry(500, 96, 64);
 geometry.scale(-1, 1, 1);
-
+ 
 let mesh = null;
 let lon = 0, lat = 0, targetLon = 0, targetLat = 0;
 const initialFov = 75;
 let targetFov = initialFov;
-
+ 
 let dragging = false;
 let lastX = 0, lastY = 0;
 const pointers = new Map();
 let pinchStart = 0, pinchFovStart = 0;
-
+ 
 function setDragging(v) { dragging = v; stage.classList.toggle('dragging', v); }
-
+ 
 stage.addEventListener('pointerdown', (e) => {
   pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (pointers.size === 1) {
@@ -560,11 +568,11 @@ stage.addEventListener('pointerdown', (e) => {
   }
   stage.setPointerCapture(e.pointerId);
 });
-
+ 
 stage.addEventListener('pointermove', (e) => {
   if (!pointers.has(e.pointerId)) return;
   pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-
+ 
   if (pointers.size === 1 && dragging) {
     const dx = e.clientX - lastX;
     const dy = e.clientY - lastY;
@@ -580,7 +588,7 @@ stage.addEventListener('pointermove', (e) => {
     targetFov = Math.max(25, Math.min(95, pinchFovStart * pinchStart / dist));
   }
 });
-
+ 
 function endP(e) {
   pointers.delete(e.pointerId);
   if (pointers.size < 2) pinchStart = 0;
@@ -589,25 +597,25 @@ function endP(e) {
 stage.addEventListener('pointerup', endP);
 stage.addEventListener('pointercancel', endP);
 stage.addEventListener('pointerleave', endP);
-
+ 
 stage.addEventListener('wheel', (e) => {
   e.preventDefault();
   targetFov = Math.max(25, Math.min(95, targetFov + e.deltaY * 0.04));
   fadeHint();
 }, { passive: false });
-
+ 
 addEventListener('keydown', (e) => {
   if (e.key === 'r' || e.key === 'R') resetView();
   if (e.key === 'f' || e.key === 'F') toggleFs();
   if (e.key === 'e' || e.key === 'E') exportHtml();
 });
-
+ 
 addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
 });
-
+ 
 function animate() {
   requestAnimationFrame(animate);
   lon += (targetLon - lon) * 0.12;
@@ -624,28 +632,28 @@ function animate() {
   renderer.render(scene, camera);
 }
 animate();
-
+ 
 function setProgress(p, l) {
   progressEl.classList.add('visible');
   ptext.classList.add('visible');
   bar.style.transform = `scaleX(${p})`;
   if (l !== undefined) ptext.textContent = l;
 }
-
+ 
 function showError(msg) {
   errorEl.textContent = msg;
   errorEl.classList.add('visible');
   progressEl.classList.remove('visible');
   ptext.classList.remove('visible');
 }
-
+ 
 let hintFaded = false;
 function fadeHint() {
   if (hintFaded) return;
   hintFaded = true;
   hint.classList.add('fade');
 }
-
+ 
 function reveal() {
   setTimeout(() => {
     intro.classList.add('hidden');
@@ -657,23 +665,23 @@ function reveal() {
     }
   }, 350);
 }
-
+ 
 function resetView() { targetLon = 0; targetLat = 0; targetFov = initialFov; }
 resetBtn.addEventListener('click', resetView);
-
+ 
 function toggleFs() {
   if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
   else document.exitFullscreen?.();
 }
 fsBtn.addEventListener('click', toggleFs);
-
+ 
 let currentBase64 = null;
 let currentMime   = 'image/jpeg';
 let currentName   = null;
-
+ 
 function loadFile(file) {
   errorEl.classList.remove('visible');
-
+ 
   if (!file.type.startsWith('image/')) {
     showError('Format non supporte');
     return;
@@ -682,9 +690,9 @@ function loadFile(file) {
     showError('Utilisez JPEG, PNG ou WebP');
     return;
   }
-
+ 
   setProgress(0.1, 'Lecture');
-
+ 
   const reader = new FileReader();
   reader.onload = (e) => {
     const dataUrl = e.target.result;
@@ -692,9 +700,9 @@ function loadFile(file) {
     currentBase64 = dataUrl.slice(comma + 1);
     currentMime   = file.type;
     currentName   = file.name;
-
+ 
     setProgress(0.4, 'Decodage');
-
+ 
     const tmpImg = new Image();
     tmpImg.onload = () => {
       const ratio = tmpImg.naturalWidth / tmpImg.naturalHeight;
@@ -703,13 +711,13 @@ function loadFile(file) {
         currentBase64 = null;
         return;
       }
-
+ 
       panoImg.src = dataUrl;
       panoImg.onload = () => {
         if (panoImg.decode) panoImg.decode().then(buildSphere).catch(buildSphere);
         else buildSphere();
       };
-
+ 
       brandFilename.textContent = stripExt(file.name);
     };
     tmpImg.onerror = () => showError('Image illisible');
@@ -718,16 +726,16 @@ function loadFile(file) {
   reader.onerror = () => showError('Lecture du fichier impossible');
   reader.readAsDataURL(file);
 }
-
+ 
 function buildSphere() {
   setProgress(0.85, 'Preparation');
-
+ 
   if (mesh) {
     mesh.material.map?.dispose();
     mesh.material.dispose();
     scene.remove(mesh);
   }
-
+ 
   const t = new THREE.Texture(panoImg);
   t.colorSpace = THREE.SRGBColorSpace;
   t.minFilter = THREE.LinearFilter;
@@ -735,16 +743,16 @@ function buildSphere() {
   t.generateMipmaps = false;
   t.anisotropy = renderer.capabilities.getMaxAnisotropy();
   t.needsUpdate = true;
-
+ 
   mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ map: t }));
   mesh.rotation.y = Math.PI;
   scene.add(mesh);
   renderer.render(scene, camera);
-
+ 
   setProgress(1, 'Pret');
   reveal();
 }
-
+ 
 ['dragenter', 'dragover'].forEach(ev => {
   document.addEventListener(ev, (e) => {
     if (!e.dataTransfer?.types.includes('Files')) return;
@@ -766,14 +774,14 @@ fileInput.addEventListener('change', (e) => {
   const f = e.target.files?.[0];
   if (f) loadFile(f);
 });
-
+ 
 function showToast(msg) {
   toast.textContent = msg;
   toast.classList.add('visible');
   clearTimeout(showToast._t);
   showToast._t = setTimeout(() => toast.classList.remove('visible'), 2200);
 }
-
+ 
 function sanitize(name) {
   return (name || 'panorama')
     .replace(/\.[^.]+$/, '')
@@ -781,36 +789,36 @@ function sanitize(name) {
     .replace(/^-+|-+$/g, '')
     .slice(0, 80) || 'panorama';
 }
-
+ 
 function stripExt(name) {
   return (name || '').replace(/\.[^.]+$/, '');
 }
-
+ 
 function exportHtml() {
   if (!currentBase64) {
     showToast('Charge une image d abord');
     return;
   }
-
+ 
   showToast('Generation...');
-
+ 
   const CLOSE_SCRIPT = '<' + '/script>';
   const ESCAPED_CLOSE = '<' + '\\/script>';
   const tplEl = document.getElementById('viewer-template');
   let tpl = tplEl.textContent.split(ESCAPED_CLOSE).join(CLOSE_SCRIPT);
-
+ 
   const baseName = sanitize(currentName);
   const noExt = stripExt(currentName);
-
+ 
   tpl = tpl
     .replaceAll('__TITLE__', noExt + ' /ai.oli')
     .replaceAll('__FILENAME_NOEXT__', noExt)
     .replace('__B64__', currentBase64);
-
+ 
   if (currentMime !== 'image/jpeg') {
     tpl = tpl.replace('data:image/jpeg;base64,', 'data:' + currentMime + ';base64,');
   }
-
+ 
   const blob = new Blob([tpl], { type: 'text/html' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -820,7 +828,7 @@ function exportHtml() {
   a.click();
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 1500);
-
+ 
   setTimeout(() => showToast('Export OK : ' + baseName + '.html'), 50);
 }
 exportBtn.addEventListener('click', exportHtml);
