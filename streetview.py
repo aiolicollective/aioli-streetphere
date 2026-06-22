@@ -182,7 +182,7 @@ def _download_tile(session, pano_id, zoom, x, y):
 def _progress_bar(done, total, width=35):
     pct    = done / total if total else 0
     filled = int(width * pct)
-    return f"[{'\u2588' * filled}{'\u2591' * (width - filled)}] {done:3d}/{total}  {pct*100:5.1f}%"
+    return f"[{'█' * filled}{'░' * (width - filled)}] {done:3d}/{total}  {pct*100:5.1f}%"
 
 
 def download_streetview_tiles(session, pano_id, zoom):
