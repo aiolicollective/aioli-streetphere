@@ -92,6 +92,31 @@ utilisateur, la resolution est celle d'origine de la photo.
 
 ---
 
+## Redressement automatique de l'horizon
+
+Les photo spheres tierces (cameras sur casque, velo, sac a dos...) sont souvent
+mises en ligne INCLINEES. Google connait leur pose et redresse l'horizon a
+l'affichage, mais le JPEG servi par le CDN reste penche. Resultat : un panorama
+dont l'horizon "sourit" -- il plonge au centre et remonte sur les bords.
+Inutilisable tel quel comme sphere d'environnement.
+
+Le script corrige ca automatiquement :
+
+1. Apres le telechargement, il lit la pose du panorama (heading/pitch/roll) via
+   les metadonnees Google (endpoint photometa).
+2. Si l'inclinaison depasse 0,5 deg, il propose de redresser. [Entree] applique
+   la rotation inverse pour remettre l'horizon a plat.
+3. Le resultat est ecrit dans un fichier _leveled.jpg SEPARE -- l'original
+   telecharge n'est jamais modifie.
+
+Si les metadonnees sont indisponibles, on peut saisir l'inclinaison a la main
+(deux nombres : pitch roll). Le redressement fait un reechantillonnage spherique
+(numpy) : l'horizon revient plat a moins d'un pixel pres. Seuls les panos
+reellement inclines sont retouches -- un panorama deja droit n'est pas
+reechantillonne inutilement.
+
+---
+
 ## Outil complementaire : builder.html
 
 Un viewer 360° autonome est inclus dans le repo. Independant du script Python,
@@ -134,7 +159,7 @@ proprement plutot que rendue de maniere deformee.
 
     .
     +-- streetview.py             Script principal
-    +-- requirements.txt          Librairies Python (requests, Pillow)
+    +-- requirements.txt          Librairies Python (requests, Pillow, numpy)
     +-- setup.bat                 Installation + 1er lancement
     +-- run.bat                   Lancement seul (fois suivantes)
     +-- builder.html              Viewer 360° + exporteur HTML autonome (independant)
@@ -142,6 +167,7 @@ proprement plutot que rendue de maniere deformee.
     +-- tiles/                    Tuiles telechargees (intermediaires)
     +-- panorama_[ID]_z[zoom].jpg Resultat final (Street View officiel)
     +-- panorama_[ID].jpg         Resultat final (photo sphere utilisateur)
+    +-- panorama_[ID]_leveled.jpg Variante horizon redresse (si tilt detecte)
 
 ---
 
