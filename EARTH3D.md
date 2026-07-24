@@ -1,4 +1,4 @@
-# earth3d — Google Earth 3D → OBJ à l'échelle (v1, expérimental)
+# earth3d — Google Earth 3D → OBJ à l'échelle (v2, expérimental)
 
 Télécharge le mesh 3D texturé de l'environnement dans un **rayon en mètres**
 autour d'un point (données Google Earth) et le recentre à l'échelle métrique,
@@ -24,12 +24,16 @@ philosophie que streetphere.
    - `model_local.mtl` nettoyé pour l'importeur OBJ de 3ds Max,
    - diagnostics affichés : dimensions de la zone en m, distance à l'origine.
 
-Sortie : `earth3d_out/<lat>_<lng>_lvl<N>_d<D>/model_local.obj` + `.mtl` + textures.
+Le rayon est **respecté** : les faces hors du disque demandé sont retirées
+(recadrage au post-traitement, marge ~15 m).
+
+Sortie : `output/3d/<lat>_<lng>_r<N>m_d<D>/model_local.obj` + `.mtl` + textures.
+(Les sphères 360 vont dans `output/spheres/` — sorties harmonisées.)
 
 ## Utilisation
 
 ```bat
-run.bat        (choix 2)
+run.bat        (choix 2, ou choix 3 pour sphère + 3D d'un coup)
 earth3d.bat    (accès direct)
 ```
 
@@ -48,17 +52,16 @@ de `setup.bat` est utilisé s'il existe), dépendances Node locales à
 - **Blender** : File > Import > Wavefront (.obj) → `model_local.obj`. 1 unité = 1 m.
 - **3ds Max** : Import OBJ → `model_local.obj`, cocher « Import materials ».
   Fichier en mètres : si les unités système sont en cm, régler l'option d'unités
-  de l'importeur (ou scale ×100). Si les textures ne suivent toujours pas,
-  vérifier que le `.mtl` et les textures sont bien dans le même dossier que
-  l'`.obj` (chemins relatifs).
+  de l'importeur (ou scale ×100).
+  **Viewport noir malgré les bitmaps ?** C'est « Show Shaded Material in
+  Viewport » désactivé sur les matériaux importés : lancer `max_show_textures.ms`
+  (Scripting > Run Script...) qui l'active partout d'un coup.
 
-## Limites connues (v1)
+## Limites connues (v2)
 
 - Protocole non officiel : peut casser sans préavis côté Google.
-- Le rayon sélectionne des cellules entières : la zone téléchargée déborde
-  du disque demandé (jusqu'à une cellule, ~150 m au niveau le plus fin).
-- Au-delà d'un certain rayon, la sélection passe à un niveau de cellule plus
-  large (plafond d'octants) — même détail final, sélection moins serrée.
+- Le téléchargement se fait par cellules entières puis la géométrie est
+  recadrée au rayon : le volume téléchargé peut dépasser ce qui est gardé.
 - LOD : le détail max dépend de la couverture 3D de la ville.
 - Le sol est calé sur le point le plus bas du mesh (approximation).
 

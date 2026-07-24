@@ -54,7 +54,7 @@ En l'effacant, tout revient comme avant.
 2. Passez en mode Street View sur un endroit qui vous plait
 3. Copiez l'URL complete dans la barre d'adresse
 4. Double-cliquez sur run.bat (ou setup.bat la premiere fois) et choisissez
-   [1] Sphere 360 ou [2] Environnement 3D
+   [1] Sphere 360, [2] Environnement 3D, ou [3] Les deux
 5. Collez l'URL quand le programme le demande et appuyez Entree
 6. Choisissez le niveau de resolution (Entree = zoom 4 par defaut)
 
@@ -134,7 +134,9 @@ recentre a l'echelle metrique pour Blender / 3ds Max.
 
 - Lancement : run.bat choix [2], ou earth3d.bat directement
 - Prerequis en plus : Node.js et Git dans le PATH (aucune dependance pip)
-- Sortie : earth3d_out/<coords>/model_local.obj + textures (1 unite = 1 m)
+- Rayon en metres respecte (geometrie recadree au disque demande)
+- Sortie : output/3d/<coords>_r<rayon>m/model_local.obj + textures (1 unite = 1 m)
+- 3ds Max viewport noir ? -> lancer max_show_textures.ms (Scripting > Run Script)
 - Documentation complete : EARTH3D.md
 
 ---
@@ -185,17 +187,16 @@ proprement plutot que rendue de maniere deformee.
     +-- earth3d_radius.js         Helper 3D : selection d'octants par rayon
     +-- requirements.txt          Librairies Python (requests, Pillow, numpy)
     +-- setup.bat                 Installation + 1er lancement
-    +-- run.bat                   Menu de lancement (sphere 360 / 3D)
+    +-- run.bat                   Menu de lancement (sphere 360 / 3D / les deux)
     +-- earth3d.bat               Lancement direct du module 3D
+    +-- both.py                   Mode combine : sphere + 3D depuis la meme URL
+    +-- max_show_textures.ms      Script 3ds Max : textures dans le viewport
     +-- builder.html              Viewer 360° + exporteur HTML autonome (independant)
     +-- EARTH3D.md                Documentation du module 3D
     +-- venv/                     Cree au 1er lancement, ne pas modifier
-    +-- tiles/                    Tuiles telechargees (intermediaires)
     +-- earth3d_vendor/           Exporter tiers, clone automatiquement (module 3D)
-    +-- earth3d_out/              Sorties 3D (model_local.obj + textures)
-    +-- panorama_[ID]_z[zoom].jpg Resultat final (Street View officiel)
-    +-- panorama_[ID].jpg         Resultat final (photo sphere utilisateur)
-    +-- panorama_[ID]_leveled.jpg Variante horizon redresse (si tilt detecte)
+    +-- output/spheres/           Panoramas 2:1 (+ tiles/ intermediaires)
+    +-- output/3d/                Environnements 3D (model_local.obj + textures)
 
 ---
 
