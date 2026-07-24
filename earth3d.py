@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-earth3d.py  --  Google Earth 3D -> OBJ a l'echelle (v0, experimental)
+earth3d.py  --  Google Earth 3D -> OBJ a l'echelle (v1, experimental)
 ====================================================================
-Depuis une URL Google Maps (ou lat,lng), telecharge le mesh 3D texture
-de l'environnement (donnees Google Earth) et le recentre a l'echelle
-metrique, pret a importer dans Blender ou 3ds Max.
+Depuis une URL Google Maps (ou lat,lng) et un rayon en metres,
+telecharge le mesh 3D texture de l'environnement (donnees Google Earth)
+et le recentre a l'echelle metrique (echelle auto-detectee), pret a
+importer dans Blender ou 3ds Max.
 
 S'appuie sur le protocole non officiel kh.google.com reverse par
 retroplasma/earth-reverse-engineering (clone automatiquement dans
@@ -79,6 +80,12 @@ def ensure_vendor():
         if r.returncode != 0:
             print("  [ERREUR] npm install a echoue.")
             return False
+
+    # copie/rafraichit le helper de selection par rayon dans l'exporter
+    src = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                       "earth3d_radius.js")
+    if os.path.isfile(src):
+        shutil.copy2(src, os.path.join(EXPORTER_DIR, "earth3d_radius.js"))
     return True
 
 
@@ -111,6 +118,48 @@ def extract_lat_lng(text):
 # ==============================================================================
 #  OCTANTS
 # ==============================================================================
+
+DEFAULT_RADIUS = 150   # rayon par defaut en metres
+
+
+def ask_radius():
+    print()
+    while True:
+        raw = input(f"  Rayon autour du point en metres "
+                    f"[Entree = {DEFAULT_RADIUS}] : ").strip()
+        if raw == "":
+            return DEFAULT_RADIUS
+        if raw.isdigit() and 10 <= int(raw) <= 3000:
+            return int(raw)
+        print("  Valeur invalide (10 a 3000 m).")
+
+
+def find_octants_radius(lat, lng, radius):
+    """Appelle earth3d_radius.js : octants couvrant le disque de rayon donne.
+    Retourne (niveau, taille_cellule_m, [octants]) ou None."""
+    print()
+    print("  Selection des octants dans le rayon (requetes kh.google.com)...")
+    r = _run(f"node earth3d_radius.js {lat} {lng} {radius}",
+             cwd=EXPORTER_DIR, capture=True)
+    if r.returncode != 0:
+        print("  [!] Echec de la selection par rayon :")
+        print((r.stderr or "").strip()[:1500])
+        return None
+
+    level, cell_m, octants = None, None, []
+    for line in (r.stdout or "").splitlines():
+        p = line.split()
+        if len(p) == 2 and p[0] == "LEVEL" and p[1].isdigit():
+            level = int(p[1])
+        elif len(p) == 2 and p[0] == "CELL_M" and p[1].isdigit():
+            cell_m = int(p[1])
+        elif len(p) == 2 and p[0] == "OCT" and re.fullmatch(r"[0-7]{2,32}", p[1]):
+            octants.append(p[1])
+
+    if not octants or level is None:
+        return None
+    return level, cell_m, octants
+
 
 def find_octants(lat, lng):
     """Appelle lat_long_to_octant.js et parse la sortie.
@@ -225,31 +274,71 @@ def _enu_basis(lat_deg, lng_deg):
 
 
 def recenter_obj(obj_in, obj_out, lat, lng):
-    """Recentre model.obj sur (lat,lng), sol a ~0, metres.
+    """Recentre model.obj sur (lat,lng), sol a ~0, unites = metres.
+
+    Les coordonnees du dump sont geocentriques. L'echelle est auto-detectee :
+    la norme moyenne des vertices doit valoir le rayon terrestre au point
+    demande ; sinon le dump est en unites normalisees et on rescale.
+
     Ecrit en convention OBJ standard Y-up (X=est, Y=altitude, Z=sud) :
     Blender et 3ds Max remettent le Z-up a l'import automatiquement.
-    Les vertices du dump sont en ECEF (geocentrique, metres)."""
+    Reference model_local.mtl (version nettoyee pour 3ds Max)."""
     ox, oy, oz = _geodetic_to_ecef(lat, lng)
+    expected = math.sqrt(ox * ox + oy * oy + oz * oz)
     (ex, ey, ez), (nx, ny, nz), (ux, uy, uz) = _enu_basis(lat, lng)
 
-    verts = []
+    raw = []
     lines = []
     with open(obj_in, "r", encoding="utf-8", errors="replace") as f:
         for line in f:
             if line.startswith("v "):
                 p = line.split()
-                x, y, z = float(p[1]) - ox, float(p[2]) - oy, float(p[3]) - oz
-                E = ex * x + ey * y + ez * z
-                N = nx * x + ny * y + nz * z
-                U = ux * x + uy * y + uz * z
-                verts.append((E, N, U))
+                raw.append((float(p[1]), float(p[2]), float(p[3])))
                 lines.append(None)          # emplacement du vertex
+            elif line.startswith("mtllib"):
+                lines.append("mtllib model_local.mtl\n")
             else:
                 lines.append(line)
 
-    if not verts:
+    if not raw:
         print("  [ERREUR] Aucun vertex dans le .obj.")
         return False
+
+    # --- auto-detection de l'echelle ------------------------------------
+    n = len(raw)
+    cx = sum(v[0] for v in raw) / n
+    cy = sum(v[1] for v in raw) / n
+    cz = sum(v[2] for v in raw) / n
+    raw_norm = math.sqrt(cx * cx + cy * cy + cz * cz)
+    if raw_norm < 1e-12:
+        print("  [ERREUR] Vertices degeneres (norme nulle).")
+        return False
+    scale = expected / raw_norm
+    if 0.99 < scale < 1.01:
+        scale = 1.0                          # deja en metres
+    else:
+        print(f"  [i] Dump en unites non metriques -> "
+              f"facteur d'echelle x{scale:.6g} applique.")
+
+    # --- transformation ECEF -> ENU local -------------------------------
+    verts = []
+    for (x, y, z) in raw:
+        x, y, z = x * scale - ox, y * scale - oy, z * scale - oz
+        E = ex * x + ey * y + ez * z
+        N = nx * x + ny * y + nz * z
+        U = ux * x + uy * y + uz * z
+        verts.append((E, N, U))
+
+    # garde-fou : si le point calcule est loin de la zone (convention
+    # geodesique differente), on recentre sur le centre de la zone.
+    mE = sum(v[0] for v in verts) / n
+    mN = sum(v[1] for v in verts) / n
+    dE = dN = 0.0
+    horiz = math.hypot(mE, mN)
+    if horiz > 5000:
+        print(f"  [!] Zone detectee a {horiz/1000:.1f} km de l'origine "
+              f"calculee -> recentrage sur le centre de la zone.")
+        dE, dN = mE, mN
 
     u_min = min(v[2] for v in verts)        # cale le sol vers 0
 
@@ -260,12 +349,44 @@ def recenter_obj(obj_in, obj_out, lat, lng):
                 E, N, U = verts[vi]
                 vi += 1
                 # ENU -> OBJ Y-up : x=est, y=altitude, z=-nord (sud)
-                f.write(f"v {E:.3f} {U - u_min:.3f} {-N:.3f}\n")
+                f.write(f"v {E - dE:.3f} {U - u_min:.3f} {-(N - dN):.3f}\n")
             else:
                 f.write(line)
 
-    print(f"  [OK] Recentre : {len(verts)} vertices, origine = point demande,"
-          f" sol ~0, unites = metres.")
+    # --- diagnostics ----------------------------------------------------
+    Es = [v[0] - dE for v in verts]
+    Ns = [v[1] - dN for v in verts]
+    Us = [v[2] - u_min for v in verts]
+    print(f"  [OK] {n} vertices | zone {max(Es)-min(Es):.0f} x "
+          f"{max(Ns)-min(Ns):.0f} m, hauteur {max(Us):.0f} m")
+    print(f"       centre du mesh a {math.hypot(mE-dE, mN-dN):.0f} m de "
+          f"l'origine | 1 unite = 1 m")
+    return True
+
+
+def write_clean_mtl(mtl_in, mtl_out):
+    """Reecrit le .mtl en version minimale (newmtl / Ka / Kd / map_Kd),
+    plus digeste pour l'importeur OBJ de 3ds Max."""
+    if not os.path.isfile(mtl_in):
+        return False
+    mats = []
+    with open(mtl_in, "r", encoding="utf-8", errors="replace") as f:
+        for line in f:
+            t = line.strip()
+            if t.startswith("newmtl "):
+                mats.append([t.split(None, 1)[1], None])
+            elif t.startswith("map_Kd ") and mats:
+                mats[-1][1] = t.split(None, 1)[1]
+    if not mats:
+        return False
+    with open(mtl_out, "w", encoding="utf-8") as f:
+        for name, tex in mats:
+            f.write(f"newmtl {name}\n")
+            f.write("Ka 1.000 1.000 1.000\nKd 1.000 1.000 1.000\n")
+            f.write("d 1.0\nillum 1\n")
+            if tex:
+                f.write(f"map_Kd {tex}\n")
+            f.write("\n")
     return True
 
 
@@ -286,16 +407,25 @@ def process(raw):
     print(f"  Position : {lat}, {lng}")
     print("=" * 62)
 
-    levels = find_octants(lat, lng)
-    if not levels:
-        print("  [ERREUR] Aucun octant trouve. Zone sans 3D, ou protocole")
-        print("  modifie cote Google. Essayez un autre point.")
-        return
+    radius = ask_radius()
+    found  = find_octants_radius(lat, lng, radius)
+    if found:
+        lvl, cell_m, octants = found
+        print(f"  [OK] {len(octants)} octant(s) niveau {lvl} "
+              f"(cellules ~{cell_m} m) couvrent le rayon de {radius} m.")
+    else:
+        print("  [!] Selection par rayon indisponible -> mode niveau (fallback).")
+        levels = find_octants(lat, lng)
+        if not levels:
+            print("  [ERREUR] Aucun octant trouve. Zone sans 3D, ou protocole")
+            print("  modifie cote Google. Essayez un autre point.")
+            return
+        lvl     = ask_octant_level(levels)
+        octants = levels[lvl]
 
-    lvl    = ask_octant_level(levels)
     detail = ask_detail()
 
-    dump_dir = dump_octants(levels[lvl], detail)
+    dump_dir = dump_octants(octants, detail)
     if not dump_dir:
         return
 
@@ -311,6 +441,8 @@ def process(raw):
         shutil.rmtree(out_dir)
     shutil.copytree(dump_dir, out_dir)
 
+    write_clean_mtl(os.path.join(out_dir, "model.mtl"),
+                    os.path.join(out_dir, "model_local.mtl"))
     ok = recenter_obj(os.path.join(out_dir, "model.obj"),
                       os.path.join(out_dir, "model_local.obj"), lat, lng)
 
@@ -318,12 +450,15 @@ def process(raw):
     print("=" * 62)
     print(f"  TERMINE  --  {out_dir}")
     print(f"    model_local.obj  -> recentre, metres  <-- importer celui-ci")
-    print(f"    model.obj        -> brut geocentrique (debug)")
+    print(f"    model_local.mtl  -> materiaux nettoyes (3ds Max friendly)")
+    print(f"    model.obj/.mtl   -> bruts geocentriques (debug)")
     print("=" * 62)
     print()
-    print("  Import Blender : File > Import > Wavefront (.obj), regle sur")
-    print("  model_local.obj. 1 unite = 1 m. Dans 3ds Max (unites cm),")
-    print("  appliquer un scale x100 ou regler File Units a l'import.")
+    print("  Blender : File > Import > Wavefront (.obj) -> model_local.obj.")
+    print("            1 unite = 1 m.")
+    print("  3ds Max : Import OBJ -> model_local.obj, cocher 'Import materials'.")
+    print("            Fichier en METRES : si tes unites systeme sont en cm,")
+    print("            regle l'option d'unites de l'importeur (ou scale x100).")
     if not ok:
         print("  (Recentrage echoue : model.obj brut disponible quand meme.)")
 
@@ -331,7 +466,7 @@ def process(raw):
 def main():
     print()
     print("=" * 62)
-    print("  Earth 3D -> OBJ a l'echelle   (v0 experimental)")
+    print("  Earth 3D -> OBJ a l'echelle   (v1 experimental)")
     print("  [Q + Entree] pour quitter")
     print("=" * 62)
     print()

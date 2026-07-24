@@ -20,7 +20,7 @@ if exist venv\Scripts\python.exe (
     goto :install_deps
 )
 
-:: ── Recherche automatique de Python ─────────────────────────
+:: ── Recherche automatique de Python ─────────────────────
 set PYTHON_CMD=
 
 :: 1. Lanceur Windows (py)
@@ -65,7 +65,7 @@ if not exist "%PYTHON_CMD%" (
 )
 
 :found_python
-:: ── Afficher la version trouvee ──────────────────────────────
+:: ── Afficher la version trouvee ──────────────────────────
 for /f "delims=" %%V in ('"%PYTHON_CMD%" --version 2^>^&1') do set PY_VERSION=%%V
 echo  [OK] Python detecte : %PYTHON_CMD%
 echo       Version        : %PY_VERSION%
@@ -74,7 +74,7 @@ echo  *** Notez ce chemin pour vos autres machines : ***
 echo  *** %PYTHON_CMD% ***
 echo.
 
-:: ── Creer le venv ────────────────────────────────────────────
+:: ── Creer le venv ────────────────────────────────────
 echo  [1/3] Creation du venv dans .\venv\ ...
 "%PYTHON_CMD%" -m venv venv
 if errorlevel 1 (
@@ -85,7 +85,7 @@ if errorlevel 1 (
 echo  [OK] venv cree.
 echo.
 
-:: ── Installer les dependances ────────────────────────────────
+:: ── Installer les dependances ────────────────────────────
 :install_deps
 echo  [2/3] Installation de requests + Pillow...
 call venv\Scripts\activate.bat
@@ -99,7 +99,13 @@ if errorlevel 1 (
 echo  [OK] Dependances installees.
 echo.
 
-:: ── Lancement ────────────────────────────────────────────────
+:: ── Modules optionnels ────────────────────────────────
+echo  [i] Module 3D (run.bat choix 2, ou earth3d.bat) : Node.js + Git requis
+node --version >nul 2>&1 && ( echo      Node.js : OK ) || ( echo      Node.js : absent -- https://nodejs.org )
+git --version >nul 2>&1 && ( echo      Git     : OK ) || ( echo      Git     : absent -- https://git-scm.com )
+echo.
+
+:: ── Lancement ────────────────────────────────────────
 echo  [3/3] Lancement de streetview.py...
 echo.
 python streetview.py
