@@ -8,6 +8,9 @@ Deux modes detectes automatiquement :
 - Street View officiel : assemblage de tuiles via l'API Google (jusqu'a 13 312 x 6 656 px)
 - Photo sphere utilisateur : telechargement direct depuis le CDN Google
 
+Inclut aussi un module 3D experimental (mesh texture de l'environnement a l'echelle,
+voir plus bas et EARTH3D.md).
+
 ---
 
 ## Prerequis
@@ -18,6 +21,9 @@ Si vous n'avez pas Python :
 1. Allez sur https://www.python.org/downloads/
 2. Telechargez la derniere version (ex : Python 3.12)
 3. Lancez l'installeur et cochez "Add Python to PATH" (important !)
+
+Pour le module 3D uniquement : Node.js (https://nodejs.org) et Git
+(https://git-scm.com) doivent aussi etre dans le PATH.
 
 ---
 
@@ -32,6 +38,7 @@ setup.bat fait tout seul :
 - Detecte Python sur votre machine
 - Cree un environnement virtuel (venv) isole dans le dossier
 - Installe les dependances (requests et Pillow)
+- Verifie la presence de Node.js et Git (module 3D)
 - Lance le script
 
 Qu'est-ce qu'un environnement virtuel (venv) ?
@@ -46,7 +53,8 @@ En l'effacant, tout revient comme avant.
 1. Ouvrez Google Maps dans votre navigateur
 2. Passez en mode Street View sur un endroit qui vous plait
 3. Copiez l'URL complete dans la barre d'adresse
-4. Double-cliquez sur run.bat (ou setup.bat la premiere fois)
+4. Double-cliquez sur run.bat (ou setup.bat la premiere fois) et choisissez
+   [1] Sphere 360 ou [2] Environnement 3D
 5. Collez l'URL quand le programme le demande et appuyez Entree
 6. Choisissez le niveau de resolution (Entree = zoom 4 par defaut)
 
@@ -117,6 +125,20 @@ reechantillonne inutilement.
 
 ---
 
+## Module 3D : earth3d (experimental)
+
+En plus de la sphere 2:1, le repo contient un module qui telecharge le mesh 3D
+texture de l'environnement dans un rayon en metres autour d'un point (donnees
+Google Earth, protocole non officiel -- sans compte, sans cle API) et le
+recentre a l'echelle metrique pour Blender / 3ds Max.
+
+- Lancement : run.bat choix [2], ou earth3d.bat directement
+- Prerequis en plus : Node.js et Git dans le PATH (aucune dependance pip)
+- Sortie : earth3d_out/<coords>/model_local.obj + textures (1 unite = 1 m)
+- Documentation complete : EARTH3D.md
+
+---
+
 ## Outil complementaire : builder.html
 
 Un viewer 360° autonome est inclus dans le repo. Independant du script Python,
@@ -158,13 +180,19 @@ proprement plutot que rendue de maniere deformee.
 ## Structure des fichiers
 
     .
-    +-- streetview.py             Script principal
+    +-- streetview.py             Script principal (sphere 360)
+    +-- earth3d.py                Module 3D : mesh texture a l'echelle
+    +-- earth3d_radius.js         Helper 3D : selection d'octants par rayon
     +-- requirements.txt          Librairies Python (requests, Pillow, numpy)
     +-- setup.bat                 Installation + 1er lancement
-    +-- run.bat                   Lancement seul (fois suivantes)
+    +-- run.bat                   Menu de lancement (sphere 360 / 3D)
+    +-- earth3d.bat               Lancement direct du module 3D
     +-- builder.html              Viewer 360° + exporteur HTML autonome (independant)
+    +-- EARTH3D.md                Documentation du module 3D
     +-- venv/                     Cree au 1er lancement, ne pas modifier
     +-- tiles/                    Tuiles telechargees (intermediaires)
+    +-- earth3d_vendor/           Exporter tiers, clone automatiquement (module 3D)
+    +-- earth3d_out/              Sorties 3D (model_local.obj + textures)
     +-- panorama_[ID]_z[zoom].jpg Resultat final (Street View officiel)
     +-- panorama_[ID].jpg         Resultat final (photo sphere utilisateur)
     +-- panorama_[ID]_leveled.jpg Variante horizon redresse (si tilt detecte)
