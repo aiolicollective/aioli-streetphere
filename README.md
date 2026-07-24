@@ -8,7 +8,7 @@ Deux modes detectes automatiquement :
 - Street View officiel : assemblage de tuiles via l'API Google (jusqu'a 13 312 x 6 656 px)
 - Photo sphere utilisateur : telechargement direct depuis le CDN Google
 
-Inclut aussi un module 3D experimental (mesh texture de l'environnement a l'echelle,
+Inclut aussi un module 3D (mesh texture de l'environnement a l'echelle,
 voir plus bas et EARTH3D.md).
 
 ---
@@ -58,7 +58,7 @@ En l'effacant, tout revient comme avant.
 5. Collez l'URL quand le programme le demande et appuyez Entree
 6. Choisissez le niveau de resolution (Entree = zoom 4 par defaut)
 
-Le fichier panorama_[ID]_z[zoom].jpg sera cree dans le dossier.
+Le fichier panorama_[ID]_z[zoom].jpg sera cree dans output/spheres/.
 
 Le programme reste ouvert apres chaque telechargement : collez une nouvelle URL directement
 pour en telecharger une autre. Pour quitter, tapez Q puis Entree.
@@ -125,7 +125,7 @@ reechantillonne inutilement.
 
 ---
 
-## Module 3D : earth3d (experimental)
+## Module 3D : earth3d
 
 En plus de la sphere 2:1, le repo contient un module qui telecharge le mesh 3D
 texture de l'environnement dans un rayon en metres autour d'un point (donnees
@@ -135,9 +135,11 @@ recentre a l'echelle metrique pour Blender / 3ds Max.
 - Lancement : streetphere.bat choix [2], ou earth3d.bat directement
 - Prerequis en plus : Node.js et Git dans le PATH (aucune dependance pip)
 - Rayon en metres respecte (geometrie recadree au disque demande)
-- Sortie : output/3d/<coords>_r<rayon>m/model_local.obj + textures (1 unite = 1 m)
-- Textures converties en .png (les .bmp 32 bits du dump s'affichent mal dans 3ds Max)
-- 3ds Max viewport noir ? -> lancer max_show_textures.ms (Scripting > Run Script)
+- Echelle metrique et origine exactes (1 unite = 1 m, sol a 0)
+- Textures converties en .png (compatibilite 3ds Max)
+- Packing optionnel : 1 seul materiau + atlas PNG unique (model_packed.obj) ;
+  dans Max, cocher 'Import as single mesh' pour fusionner en un seul objet
+- Sortie : output/3d/<coords>_r<rayon>m/
 - Documentation complete : EARTH3D.md
 
 ---
@@ -187,18 +189,18 @@ proprement plutot que rendue de maniere deformee.
     +-- earth3d.py                Module 3D : mesh texture a l'echelle
     +-- earth3d_radius.js         Helper 3D : selection d'octants par rayon
     +-- requirements.txt          Librairies Python (requests, Pillow, numpy)
-    +-- setup.bat                 Installation + 1er lancement
+    +-- setup.bat                 Installation (venv + dependances)
     +-- streetphere.bat           Menu de lancement (sphere 360 / 3D / les deux)
     +-- run.bat                   Alias de compatibilite -> streetphere.bat
     +-- earth3d.bat               Lancement direct du module 3D
     +-- both.py                   Mode combine : sphere + 3D depuis la meme URL
-    +-- max_show_textures.ms      Script 3ds Max : textures dans le viewport
+    +-- max_show_textures.ms      Script 3ds Max (depannage viewport, optionnel)
     +-- builder.html              Viewer 360° + exporteur HTML autonome (independant)
     +-- EARTH3D.md                Documentation du module 3D
     +-- venv/                     Cree au 1er lancement, ne pas modifier
     +-- earth3d_vendor/           Exporter tiers, clone automatiquement (module 3D)
     +-- output/spheres/           Panoramas 2:1 (+ tiles/ intermediaires)
-    +-- output/3d/                Environnements 3D (model_local.obj + textures)
+    +-- output/3d/                Environnements 3D (model_packed.obj + atlas)
 
 ---
 
