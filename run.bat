@@ -3,6 +3,7 @@
 ::  run.bat  —  aioli-streetphere : menu de lancement
 ::  [1] Sphere 360 (streetview, requiert setup.bat une fois)
 ::  [2] Environnement 3D a l'echelle (earth3d)
+::  [3] Les deux depuis la meme URL (requiert setup.bat)
 :: ============================================================
 
 :: ── Detection Python (meme logique que setup.bat) ──────────
@@ -38,12 +39,14 @@ echo ============================================================
 echo.
 echo   [1] Sphere 360 equirectangulaire (streetview)
 echo   [2] Environnement 3D a l'echelle (earth3d)
+echo   [3] Les deux depuis la meme URL
 echo   [Q] Quitter
 echo.
 set CHOICE=
 set /p CHOICE="  Choix > "
 if /i "%CHOICE%"=="1" goto :sphere
 if /i "%CHOICE%"=="2" goto :earth3d
+if /i "%CHOICE%"=="3" goto :both
 if /i "%CHOICE%"=="q" exit /b 0
 goto :menu
 
@@ -59,4 +62,14 @@ goto :menu
 
 :earth3d
 "%PYTHON_CMD%" earth3d.py
+goto :menu
+
+:both
+if not exist venv\Scripts\python.exe (
+    echo.
+    echo  [!] Le mode combine requiert le venv : lancez setup.bat d'abord.
+    goto :menu
+)
+call venv\Scripts\activate.bat
+python both.py
 goto :menu

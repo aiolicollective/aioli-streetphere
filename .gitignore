@@ -2,10 +2,13 @@
 venv/
 __pycache__/
 
-# sorties streetphere
+# sorties (spheres + 3D)
+output/
+
+# anciens emplacements de sorties
 tiles/
 panorama_*.jpg
+earth3d_out/
 
 # earth3d
 earth3d_vendor/
-earth3d_out/

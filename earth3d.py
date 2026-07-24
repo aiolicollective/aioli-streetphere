@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-earth3d.py  --  Google Earth 3D -> OBJ a l'echelle (v1, experimental)
+earth3d.py  --  Google Earth 3D -> OBJ a l'echelle (v2, experimental)
 ====================================================================
 Depuis une URL Google Maps (ou lat,lng) et un rayon en metres,
 telecharge le mesh 3D texture de l'environnement (donnees Google Earth)
@@ -34,7 +34,7 @@ import subprocess
 VENDOR_DIR   = "earth3d_vendor"
 VENDOR_REPO  = "https://github.com/retroplasma/earth-reverse-engineering.git"
 EXPORTER_DIR = os.path.join(VENDOR_DIR, "exporter")
-OUT_DIR      = "earth3d_out"
+OUT_DIR      = os.path.join("output", "3d")
 
 DEFAULT_DETAIL = 20    # niveau de detail max du dump (20 = max habituel)
 
@@ -273,66 +273,65 @@ def _enu_basis(lat_deg, lng_deg):
     return e, n, u
 
 
-def recenter_obj(obj_in, obj_out, lat, lng):
+R_GOOGLE = 6371010.0   # rayon de la sphere Google Earth (rocktree)
+
+
+def recenter_obj(obj_in, obj_out, lat, lng, radius=None):
     """Recentre model.obj sur (lat,lng), sol a ~0, unites = metres.
 
-    Les coordonnees du dump sont geocentriques. L'echelle est auto-detectee :
-    la norme moyenne des vertices doit valoir le rayon terrestre au point
-    demande ; sinon le dump est en unites normalisees et on rescale.
+    Convention verifiee (test Sydney 2026-07) : le globe Google Earth est une
+    SPHERE, la latitude geodesique y est utilisee comme latitude spherique.
+    L'origine locale est donc prise dans cette convention (pas d'ellipsoide).
+    L'echelle est auto-detectee via la norme moyenne des vertices.
+
+    Si radius est fourni, la geometrie est RECADREE : seules les faces dont
+    tous les sommets sont dans le rayon (+ marge) sont conservees.
 
     Ecrit en convention OBJ standard Y-up (X=est, Y=altitude, Z=sud) :
     Blender et 3ds Max remettent le Z-up a l'import automatiquement.
     Reference model_local.mtl (version nettoyee pour 3ds Max)."""
-    ox, oy, oz = _geodetic_to_ecef(lat, lng)
-    expected = math.sqrt(ox * ox + oy * oy + oz * oz)
+    import array
+
     (ex, ey, ez), (nx, ny, nz), (ux, uy, uz) = _enu_basis(lat, lng)
 
-    raw = []
-    lines = []
+    # ---- passe 1 : lire les vertices, projeter sur les axes locaux -----
+    # E et N sont directement relatifs au meridien/parallele du point
+    # demande (axes e/n perpendiculaires a sa direction radiale).
+    E = array.array("d"); N = array.array("d"); U = array.array("d")
+    sx = sy = sz = 0.0
     with open(obj_in, "r", encoding="utf-8", errors="replace") as f:
         for line in f:
             if line.startswith("v "):
                 p = line.split()
-                raw.append((float(p[1]), float(p[2]), float(p[3])))
-                lines.append(None)          # emplacement du vertex
-            elif line.startswith("mtllib"):
-                lines.append("mtllib model_local.mtl\n")
-            else:
-                lines.append(line)
+                x, y, z = float(p[1]), float(p[2]), float(p[3])
+                sx += x; sy += y; sz += z
+                E.append(ex * x + ey * y + ez * z)
+                N.append(nx * x + ny * y + nz * z)
+                U.append(ux * x + uy * y + uz * z)
 
-    if not raw:
+    n = len(E)
+    if n == 0:
         print("  [ERREUR] Aucun vertex dans le .obj.")
         return False
 
-    # --- auto-detection de l'echelle ------------------------------------
-    n = len(raw)
-    cx = sum(v[0] for v in raw) / n
-    cy = sum(v[1] for v in raw) / n
-    cz = sum(v[2] for v in raw) / n
-    raw_norm = math.sqrt(cx * cx + cy * cy + cz * cz)
+    # ---- echelle auto (norme moyenne ~ rayon de la sphere Google) ------
+    raw_norm = math.sqrt((sx / n) ** 2 + (sy / n) ** 2 + (sz / n) ** 2)
     if raw_norm < 1e-12:
         print("  [ERREUR] Vertices degeneres (norme nulle).")
         return False
-    scale = expected / raw_norm
+    scale = R_GOOGLE / raw_norm
     if 0.99 < scale < 1.01:
         scale = 1.0                          # deja en metres
     else:
         print(f"  [i] Dump en unites non metriques -> "
               f"facteur d'echelle x{scale:.6g} applique.")
+    if scale != 1.0:
+        for i in range(n):
+            E[i] *= scale; N[i] *= scale; U[i] *= scale
 
-    # --- transformation ECEF -> ENU local -------------------------------
-    verts = []
-    for (x, y, z) in raw:
-        x, y, z = x * scale - ox, y * scale - oy, z * scale - oz
-        E = ex * x + ey * y + ez * z
-        N = nx * x + ny * y + nz * z
-        U = ux * x + uy * y + uz * z
-        verts.append((E, N, U))
-
-    # garde-fou : si le point calcule est loin de la zone (convention
-    # geodesique differente), on recentre sur le centre de la zone.
-    mE = sum(v[0] for v in verts) / n
-    mN = sum(v[1] for v in verts) / n
+    # garde-fou si la convention differait malgre tout
+    mE = sum(E) / n
+    mN = sum(N) / n
     dE = dN = 0.0
     horiz = math.hypot(mE, mN)
     if horiz > 5000:
@@ -340,27 +339,79 @@ def recenter_obj(obj_in, obj_out, lat, lng):
               f"calculee -> recentrage sur le centre de la zone.")
         dE, dN = mE, mN
 
-    u_min = min(v[2] for v in verts)        # cale le sol vers 0
+    u_min = min(U)                          # cale le sol vers 0
 
+    # ---- selection des vertices (recadrage au rayon) -------------------
+    keep = bytearray(n)
+    if radius:
+        rk2 = (float(radius) + 15.0) ** 2   # marge ~ taille de triangle max
+        kept = 0
+        for i in range(n):
+            eE = E[i] - dE; eN = N[i] - dN
+            if eE * eE + eN * eN <= rk2:
+                keep[i] = 1; kept += 1
+        if kept == 0:
+            print("  [!] Rien dans le rayon demande ?! Recadrage annule.")
+            for i in range(n):
+                keep[i] = 1
+        else:
+            print(f"  [i] Recadrage au rayon {radius} m : "
+                  f"{kept}/{n} vertices conserves.")
+    else:
+        for i in range(n):
+            keep[i] = 1
+
+    # nouvel index (1-base) de chaque vertex conserve, 0 = supprime
+    remap = array.array("l", [0]) * (n + 1)
+    nv = 0
+    for i in range(n):
+        if keep[i]:
+            nv += 1
+            remap[i + 1] = nv
+
+    # ---- passe 2 : reecrire le fichier ---------------------------------
     vi = 0
-    with open(obj_out, "w", encoding="utf-8") as f:
-        for line in lines:
-            if line is None:
-                E, N, U = verts[vi]
+    dropped_faces = 0
+    with open(obj_in, "r", encoding="utf-8", errors="replace") as fin, \
+         open(obj_out, "w", encoding="utf-8") as fout:
+        for line in fin:
+            if line.startswith("v "):
                 vi += 1
-                # ENU -> OBJ Y-up : x=est, y=altitude, z=-nord (sud)
-                f.write(f"v {E - dE:.3f} {U - u_min:.3f} {-(N - dN):.3f}\n")
+                if keep[vi - 1]:
+                    # ENU -> OBJ Y-up : x=est, y=altitude, z=-nord (sud)
+                    fout.write(f"v {E[vi-1]-dE:.3f} "
+                               f"{U[vi-1]-u_min:.3f} {-(N[vi-1]-dN):.3f}\n")
+            elif line.startswith("f "):
+                toks = line.split()[1:]
+                new = []
+                ok = True
+                for t in toks:
+                    parts = t.split("/")
+                    old = int(parts[0])
+                    nn = remap[old] if 0 < old <= n else 0
+                    if nn == 0:
+                        ok = False
+                        break
+                    parts[0] = str(nn)
+                    new.append("/".join(parts))
+                if ok:
+                    fout.write("f " + " ".join(new) + "\n")
+                else:
+                    dropped_faces += 1
+            elif line.startswith("mtllib"):
+                fout.write("mtllib model_local.mtl\n")
             else:
-                f.write(line)
+                fout.write(line)
 
-    # --- diagnostics ----------------------------------------------------
-    Es = [v[0] - dE for v in verts]
-    Ns = [v[1] - dN for v in verts]
-    Us = [v[2] - u_min for v in verts]
-    print(f"  [OK] {n} vertices | zone {max(Es)-min(Es):.0f} x "
-          f"{max(Ns)-min(Ns):.0f} m, hauteur {max(Us):.0f} m")
-    print(f"       centre du mesh a {math.hypot(mE-dE, mN-dN):.0f} m de "
-          f"l'origine | 1 unite = 1 m")
+    # ---- diagnostics ----------------------------------------------------
+    kE = [E[i] - dE for i in range(n) if keep[i]]
+    kN = [N[i] - dN for i in range(n) if keep[i]]
+    kU = [U[i] - u_min for i in range(n) if keep[i]]
+    print(f"  [OK] {nv} vertices ({dropped_faces} faces hors rayon retirees)")
+    print(f"       zone {max(kE)-min(kE):.0f} x {max(kN)-min(kN):.0f} m, "
+          f"hauteur {max(kU):.0f} m | 1 unite = 1 m")
+    print(f"       centre du mesh a {math.hypot(mE-dE, mN-dN):.0f} m "
+          f"de l'origine")
     return True
 
 
@@ -422,6 +473,7 @@ def process(raw):
             return
         lvl     = ask_octant_level(levels)
         octants = levels[lvl]
+        radius  = None
 
     detail = ask_detail()
 
@@ -434,8 +486,9 @@ def process(raw):
         print(f"  [ERREUR] model.obj introuvable dans {dump_dir}")
         return
 
-    # dossier de sortie propre a la racine du repo
-    name    = f"{lat:.5f}_{lng:.5f}_lvl{lvl}_d{detail}".replace("-", "m")
+    # dossier de sortie
+    zone    = f"r{radius}m" if radius else f"lvl{lvl}"
+    name    = f"{lat:.5f}_{lng:.5f}_{zone}_d{detail}".replace("-", "m")
     out_dir = os.path.join(OUT_DIR, name)
     if os.path.isdir(out_dir):
         shutil.rmtree(out_dir)
@@ -444,7 +497,8 @@ def process(raw):
     write_clean_mtl(os.path.join(out_dir, "model.mtl"),
                     os.path.join(out_dir, "model_local.mtl"))
     ok = recenter_obj(os.path.join(out_dir, "model.obj"),
-                      os.path.join(out_dir, "model_local.obj"), lat, lng)
+                      os.path.join(out_dir, "model_local.obj"),
+                      lat, lng, radius=radius)
 
     print()
     print("=" * 62)
@@ -459,6 +513,9 @@ def process(raw):
     print("  3ds Max : Import OBJ -> model_local.obj, cocher 'Import materials'.")
     print("            Fichier en METRES : si tes unites systeme sont en cm,")
     print("            regle l'option d'unites de l'importeur (ou scale x100).")
+    print("            Viewport noir malgre les bitmaps ? Lance le script")
+    print("            max_show_textures.ms (Scripting > Run Script) ou active")
+    print("            'Show Shaded Material in Viewport' sur les materiaux.")
     if not ok:
         print("  (Recentrage echoue : model.obj brut disponible quand meme.)")
 
@@ -466,7 +523,7 @@ def process(raw):
 def main():
     print()
     print("=" * 62)
-    print("  Earth 3D -> OBJ a l'echelle   (v1 experimental)")
+    print("  Earth 3D -> OBJ a l'echelle   (v2 experimental)")
     print("  [Q + Entree] pour quitter")
     print("=" * 62)
     print()
