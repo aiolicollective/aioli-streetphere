@@ -39,7 +39,7 @@ setup.bat fait tout seul :
 - Cree un environnement virtuel (venv) isole dans le dossier
 - Installe les dependances (requests et Pillow)
 - Verifie la presence de Node.js et Git (module 3D)
-- Lance le script
+- Propose de lancer le menu (streetphere.bat)
 
 Qu'est-ce qu'un environnement virtuel (venv) ?
 Un dossier venv sera cree dans le dossier du projet. Il contient une copie locale de Python
@@ -53,7 +53,7 @@ En l'effacant, tout revient comme avant.
 1. Ouvrez Google Maps dans votre navigateur
 2. Passez en mode Street View sur un endroit qui vous plait
 3. Copiez l'URL complete dans la barre d'adresse
-4. Double-cliquez sur run.bat (ou setup.bat la premiere fois) et choisissez
+4. Double-cliquez sur streetphere.bat (ou setup.bat la premiere fois) et choisissez
    [1] Sphere 360, [2] Environnement 3D, ou [3] Les deux
 5. Collez l'URL quand le programme le demande et appuyez Entree
 6. Choisissez le niveau de resolution (Entree = zoom 4 par defaut)
@@ -132,10 +132,11 @@ texture de l'environnement dans un rayon en metres autour d'un point (donnees
 Google Earth, protocole non officiel -- sans compte, sans cle API) et le
 recentre a l'echelle metrique pour Blender / 3ds Max.
 
-- Lancement : run.bat choix [2], ou earth3d.bat directement
+- Lancement : streetphere.bat choix [2], ou earth3d.bat directement
 - Prerequis en plus : Node.js et Git dans le PATH (aucune dependance pip)
 - Rayon en metres respecte (geometrie recadree au disque demande)
 - Sortie : output/3d/<coords>_r<rayon>m/model_local.obj + textures (1 unite = 1 m)
+- Textures converties en .png (les .bmp 32 bits du dump s'affichent mal dans 3ds Max)
 - 3ds Max viewport noir ? -> lancer max_show_textures.ms (Scripting > Run Script)
 - Documentation complete : EARTH3D.md
 
@@ -187,7 +188,8 @@ proprement plutot que rendue de maniere deformee.
     +-- earth3d_radius.js         Helper 3D : selection d'octants par rayon
     +-- requirements.txt          Librairies Python (requests, Pillow, numpy)
     +-- setup.bat                 Installation + 1er lancement
-    +-- run.bat                   Menu de lancement (sphere 360 / 3D / les deux)
+    +-- streetphere.bat           Menu de lancement (sphere 360 / 3D / les deux)
+    +-- run.bat                   Alias de compatibilite -> streetphere.bat
     +-- earth3d.bat               Lancement direct du module 3D
     +-- both.py                   Mode combine : sphere + 3D depuis la meme URL
     +-- max_show_textures.ms      Script 3ds Max : textures dans le viewport

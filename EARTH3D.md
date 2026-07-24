@@ -1,4 +1,4 @@
-# earth3d — Google Earth 3D → OBJ à l'échelle (v2, expérimental)
+# earth3d — Google Earth 3D → OBJ à l'échelle (v2.1, expérimental)
 
 Télécharge le mesh 3D texturé de l'environnement dans un **rayon en mètres**
 autour d'un point (données Google Earth) et le recentre à l'échelle métrique,
@@ -22,6 +22,8 @@ philosophie que streetphere.
    - recentrage sur le point demandé, sol calé vers 0,
    - axes locaux (est / nord / altitude), convention OBJ Y-up standard,
    - `model_local.mtl` nettoyé pour l'importeur OBJ de 3ds Max,
+   - textures `.bmp` (32 bits, mal lues par Max : bande noire) converties
+     en `.png` automatiquement (Pillow, présent via le venv de `setup.bat`),
    - diagnostics affichés : dimensions de la zone en m, distance à l'origine.
 
 Le rayon est **respecté** : les faces hors du disque demandé sont retirées
@@ -33,8 +35,8 @@ Sortie : `output/3d/<lat>_<lng>_r<N>m_d<D>/model_local.obj` + `.mtl` + textures.
 ## Utilisation
 
 ```bat
-run.bat        (choix 2, ou choix 3 pour sphère + 3D d'un coup)
-earth3d.bat    (accès direct)
+streetphere.bat  (choix 2, ou choix 3 pour sphère + 3D d'un coup)
+earth3d.bat      (accès direct)
 ```
 
 Prérequis : Node.js + Git dans le PATH. Python est détecté automatiquement
