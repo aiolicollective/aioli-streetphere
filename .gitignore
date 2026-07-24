@@ -1,0 +1,11 @@
+# environnement
+venv/
+__pycache__/
+
+# sorties streetphere
+tiles/
+panorama_*.jpg
+
+# earth3d
+earth3d_vendor/
+earth3d_out/
