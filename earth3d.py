@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-earth3d.py  --  Google Earth 3D -> OBJ a l'echelle (v2.1, experimental)
+earth3d.py  --  Google Earth 3D -> OBJ a l'echelle (v2.2, experimental)
 ====================================================================
 Depuis une URL Google Maps (ou lat,lng) et un rayon en metres,
 telecharge le mesh 3D texture de l'environnement (donnees Google Earth)
@@ -452,6 +452,151 @@ def convert_bmp_textures(out_dir):
                 txt.replace(".bmp", ".png").replace(".BMP", ".png"))
 
 
+ATLAS_MAX = 16384      # taille max de l'atlas (px), lisible partout
+ATLAS_GUTTER = 4       # marge entre textures (evite le bleed des mips)
+
+
+def pack_obj(out_dir, obj_name="model_local.obj"):
+    """Fusionne les tuiles en UN SEUL objet avec UN SEUL materiau :
+    toutes les textures sont packees dans un atlas PNG unique et les UV
+    sont re-mappes vers la case de chaque tuile.
+
+    Produit : model_packed.obj + model_packed.mtl + atlas.png.
+    Necessite Pillow. Les fichiers multi-textures sont conserves."""
+    import array
+    try:
+        from PIL import Image
+    except ImportError:
+        print("  [!] Pillow absent : packing atlas impossible (venv setup.bat).")
+        return False
+
+    obj_in  = os.path.join(out_dir, obj_name)
+    mtl_in  = os.path.join(out_dir, "model_local.mtl")
+    if not (os.path.isfile(obj_in) and os.path.isfile(mtl_in)):
+        print("  [!] Fichiers manquants pour le packing.")
+        return False
+
+    # ---- materiaux -> fichiers texture ---------------------------------
+    mat_tex = {}
+    cur = None
+    with open(mtl_in, "r", encoding="utf-8", errors="replace") as f:
+        for line in f:
+            t = line.strip()
+            if t.startswith("newmtl "):
+                cur = t.split(None, 1)[1]
+            elif t.startswith("map_Kd ") and cur:
+                mat_tex[cur] = t.split(None, 1)[1]
+
+    # ---- passe 1 : associer chaque vt a son materiau -------------------
+    mats = []                      # ordre d'apparition
+    mat_of_vt = array.array("i")   # index materiau par vt (ordre du fichier)
+    cur_idx = -1
+    with open(obj_in, "r", encoding="utf-8", errors="replace") as f:
+        for line in f:
+            if line.startswith("usemtl "):
+                name = line.split(None, 1)[1].strip()
+                if not mats or mats[-1] != name:
+                    mats.append(name)
+                cur_idx = len(mats) - 1
+            elif line.startswith("vt "):
+                mat_of_vt.append(cur_idx)
+
+    used = [m for m in mats if m in mat_tex]
+    if not used:
+        print("  [!] Aucune texture referencee : packing annule.")
+        return False
+
+    # ---- chargement des textures + layout (shelf packing) --------------
+    imgs = {}
+    for m in set(used):
+        p = os.path.join(out_dir, mat_tex[m])
+        if not os.path.isfile(p):
+            print(f"  [!] Texture absente : {mat_tex[m]} -> packing annule.")
+            return False
+        imgs[m] = Image.open(p).convert("RGB")
+
+    g = ATLAS_GUTTER
+    order = sorted(set(used), key=lambda m: -imgs[m].height)
+    # largeur cible ~ carre
+    total_area = sum((imgs[m].width + g) * (imgs[m].height + g) for m in order)
+    atlas_w = min(ATLAS_MAX, max(1024, 1 << (int(total_area ** 0.5) - 1).bit_length()))
+
+    def layout(scale):
+        pos, x, y, row_h, W = {}, g, g, 0, atlas_w
+        for m in order:
+            w = max(1, int(imgs[m].width * scale))
+            h = max(1, int(imgs[m].height * scale))
+            if x + w + g > W:
+                x = g; y += row_h + g; row_h = 0
+            pos[m] = (x, y, w, h)
+            x += w + g; row_h = max(row_h, h)
+        return pos, y + row_h + g
+
+    scale = 1.0
+    pos, atlas_h = layout(scale)
+    while atlas_h > ATLAS_MAX and scale > 0.05:
+        scale *= (ATLAS_MAX / float(atlas_h)) ** 0.5 * 0.98
+        pos, atlas_h = layout(scale)
+    atlas_h = min(1 << (atlas_h - 1).bit_length(), ATLAS_MAX)
+    pos, real_h = layout(scale)
+    if real_h > atlas_h:
+        atlas_h = min(ATLAS_MAX, 1 << (real_h - 1).bit_length())
+
+    if scale < 1.0:
+        print(f"  [i] Atlas plafonne a {ATLAS_MAX}px : textures reduites "
+              f"a {scale*100:.0f}% pour tenir.")
+
+    print(f"  [i] Atlas {atlas_w} x {atlas_h} px, "
+          f"{len(set(used))} textures packees...")
+    atlas = Image.new("RGB", (atlas_w, atlas_h), (0, 0, 0))
+    for m, (x, y, w, h) in pos.items():
+        im = imgs[m] if (w, h) == imgs[m].size else imgs[m].resize((w, h))
+        atlas.paste(im, (x, y))
+        # bleed : duplique bords et coins dans la marge
+        if g:
+            atlas.paste(im.crop((0, 0, w, 1)).resize((w, g)), (x, y - g))
+            atlas.paste(im.crop((0, h - 1, w, h)).resize((w, g)), (x, y + h))
+            atlas.paste(im.crop((0, 0, 1, h)).resize((g, h)), (x - g, y))
+            atlas.paste(im.crop((w - 1, 0, w, h)).resize((g, h)), (x + w, y))
+            atlas.paste(im.crop((0, 0, 1, 1)).resize((g, g)), (x - g, y - g))
+            atlas.paste(im.crop((w - 1, 0, w, 1)).resize((g, g)), (x + w, y - g))
+            atlas.paste(im.crop((0, h - 1, 1, h)).resize((g, g)), (x - g, y + h))
+            atlas.paste(im.crop((w - 1, h - 1, w, h)).resize((g, g)), (x + w, y + h))
+    atlas.save(os.path.join(out_dir, "atlas.png"))
+
+    # ---- passe 2 : reecrire l'obj (un objet, un materiau, UV remappes) -
+    with open(os.path.join(out_dir, "model_packed.mtl"), "w",
+              encoding="utf-8") as f:
+        f.write("newmtl atlas\nKa 1.000 1.000 1.000\nKd 1.000 1.000 1.000\n"
+                "d 1.0\nillum 1\nmap_Kd atlas.png\n")
+
+    W, H = float(atlas_w), float(atlas_h)
+    vt_i = 0
+    with open(obj_in, "r", encoding="utf-8", errors="replace") as fin, \
+         open(os.path.join(out_dir, "model_packed.obj"), "w",
+              encoding="utf-8") as fout:
+        fout.write("mtllib model_packed.mtl\no model\nusemtl atlas\n")
+        for line in fin:
+            if line.startswith("vt "):
+                p = line.split()
+                u = min(max(float(p[1]), 0.0), 1.0)
+                v = min(max(float(p[2]), 0.0), 1.0)
+                mi = mat_of_vt[vt_i]; vt_i += 1
+                m = mats[mi] if 0 <= mi < len(mats) else None
+                if m in pos:
+                    x, y, w, h = pos[m]
+                    u = (x + u * w) / W
+                    v = (H - (y + h) + v * h) / H   # origine OBJ en bas
+                fout.write(f"vt {u:.6f} {v:.6f}\n")
+            elif line.startswith(("usemtl", "o ", "mtllib", "g ")):
+                continue
+            else:
+                fout.write(line)
+
+    print(f"  [OK] model_packed.obj : 1 objet, 1 materiau, atlas.png.")
+    return True
+
+
 def write_clean_mtl(mtl_in, mtl_out):
     """Reecrit le .mtl en version minimale (newmtl / Ka / Kd / map_Kd),
     plus digeste pour l'importeur OBJ de 3ds Max."""
@@ -538,17 +683,30 @@ def process(raw):
                       os.path.join(out_dir, "model_local.obj"),
                       lat, lng, radius=radius)
 
+    packed = False
+    if ok:
+        print()
+        ans = input("  Packer en 1 seul objet + atlas de textures ? "
+                    "[Entree = oui / n] : ").strip().lower()
+        if ans not in ("n", "non", "no"):
+            packed = pack_obj(out_dir)
+
     print()
     print("=" * 62)
     print(f"  TERMINE  --  {out_dir}")
-    print(f"    model_local.obj  -> recentre, metres  <-- importer celui-ci")
+    if packed:
+        print(f"    model_packed.obj -> 1 objet, 1 materiau, atlas.png  <-- importer celui-ci")
+        print(f"    model_local.obj  -> multi-textures (recentre, metres)")
+    else:
+        print(f"    model_local.obj  -> recentre, metres  <-- importer celui-ci")
     print(f"    model_local.mtl  -> materiaux nettoyes (3ds Max friendly)")
     print(f"    model.obj/.mtl   -> bruts geocentriques (debug)")
     print("=" * 62)
     print()
-    print("  Blender : File > Import > Wavefront (.obj) -> model_local.obj.")
+    best = "model_packed.obj" if packed else "model_local.obj"
+    print(f"  Blender : File > Import > Wavefront (.obj) -> {best}.")
     print("            1 unite = 1 m.")
-    print("  3ds Max : Import OBJ -> model_local.obj, cocher 'Import materials'.")
+    print(f"  3ds Max : Import OBJ -> {best}, cocher 'Import materials'.")
     print("            Fichier en METRES : si tes unites systeme sont en cm,")
     print("            regle l'option d'unites de l'importeur (ou scale x100).")
     print("            Viewport noir malgre les bitmaps ? Lance le script")
@@ -561,7 +719,7 @@ def process(raw):
 def main():
     print()
     print("=" * 62)
-    print("  Earth 3D -> OBJ a l'echelle   (v2.1 experimental)")
+    print("  Earth 3D -> OBJ a l'echelle   (v2.2 experimental)")
     print("  [Q + Entree] pour quitter")
     print("=" * 62)
     print()
