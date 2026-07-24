@@ -39,7 +39,8 @@ from io import BytesIO
 
 DEFAULT_ZOOM = 4   # Valeur par defaut si l'utilisateur appuie sur Entree
 
-TILES_DIR    = "tiles"
+OUT_DIR      = os.path.join("output", "spheres")
+TILES_DIR    = os.path.join(OUT_DIR, "tiles")
 JPEG_QUALITY = 95
 TIMEOUT      = 20
 RETRIES      = 2
@@ -421,7 +422,7 @@ def fetch_pano_pose(session, pano_id):
                                                    "gl": "us", "pb": pb}, timeout=TIMEOUT)
             r.raise_for_status()
             txt = r.text
-            data = json.loads(txt[txt.find("["):])    # retire le prefixe ")]}'"
+            data = json.loads(txt[txt.find("["):])    # retire le prefixe ")]}'\"
             node = data[1][0][5][0][1][2]
             heading, tilt, roll_raw = float(node[0]), float(node[1]), float(node[2])
         except Exception:
@@ -512,6 +513,79 @@ PANO_TYPE_LABELS = {
     10: "Photo sphere / 360 tiers",
 }
 
+def process_url(session, raw):
+    """Traite une URL/panoID : telechargement, sauvegarde, redressement.
+    Utilise par la boucle interactive et par le mode combine (both.py)."""
+    # -- Extraction du panoID
+    pano_id = extract_pano_id(raw)
+    if not pano_id:
+        print("  [ERREUR] Impossible d'extraire un panoID. Verifiez l'URL.")
+        return
+
+    meta = parse_url_metadata(raw) if raw.startswith("http") else {
+        "pano_type": 0, "width": None, "height": None, "photo_url": None
+    }
+
+    pano_type  = meta["pano_type"]
+    type_label = PANO_TYPE_LABELS.get(pano_type, f"Type inconnu ({pano_type})")
+
+    print()
+    print("=" * 62)
+    print(f"  PanoID   : {pano_id}")
+    print(f"  Type     : {type_label}")
+    if meta["width"] and meta["height"]:
+        print(f"  Res. max : {meta['width']} x {meta['height']} px")
+    print("=" * 62)
+
+    # -- Choix du zoom
+    if pano_type == 0:
+        zoom = ask_zoom()
+    else:
+        zoom = DEFAULT_ZOOM
+        print()
+        print("  (Photo sphere : zoom sans effet, resolution d'origine utilisee)")
+
+    # -- Telechargement
+    if pano_type == 0:
+        panorama = download_streetview_tiles(session, pano_id, zoom)
+        output   = os.path.join(OUT_DIR, f"panorama_{pano_id}_z{zoom}.jpg")
+    else:
+        panorama = download_photo_sphere(
+            session,
+            meta["photo_url"],
+            meta["width"],
+            meta["height"],
+        )
+        output = os.path.join(OUT_DIR, f"panorama_{pano_id}.jpg")
+
+    if panorama is None:
+        print("  Echec du telechargement. Essayez une autre URL.")
+        return
+
+    # -- Sauvegarde
+    os.makedirs(OUT_DIR, exist_ok=True)
+    print(f"  Sauvegarde -> {output}")
+    panorama.save(output, "JPEG", quality=JPEG_QUALITY)
+
+    w, h    = panorama.size
+    size_mb = os.path.getsize(output) / (1024 * 1024)
+    ratio   = w / h if h else 0
+
+    print()
+    print("=" * 62)
+    print(f"  TERMINE  --  {output}")
+    print(f"  Dimensions : {w} x {h} px")
+    print(f"  Ratio      : {ratio:.2f}:1  (cible 2.00:1)")
+    print(f"  Taille     : {size_mb:.1f} Mo")
+    print("=" * 62)
+
+    # -- Redressement optionnel de l'horizon (non destructif)
+    maybe_relevel(session, pano_id, panorama, output)
+
+    print()
+    print("  Utilisable comme carte spherique dans 3ds Max + V-Ray.")
+
+
 def main():
 
     print()
@@ -544,73 +618,7 @@ def main():
                 print()
                 break
 
-            # -- Extraction du panoID
-            pano_id = extract_pano_id(raw)
-            if not pano_id:
-                print("  [ERREUR] Impossible d'extraire un panoID. Verifiez l'URL.")
-                continue
-
-            meta = parse_url_metadata(raw) if raw.startswith("http") else {
-                "pano_type": 0, "width": None, "height": None, "photo_url": None
-            }
-
-            pano_type  = meta["pano_type"]
-            type_label = PANO_TYPE_LABELS.get(pano_type, f"Type inconnu ({pano_type})")
-
-            print()
-            print("=" * 62)
-            print(f"  PanoID   : {pano_id}")
-            print(f"  Type     : {type_label}")
-            if meta["width"] and meta["height"]:
-                print(f"  Res. max : {meta['width']} x {meta['height']} px")
-            print("=" * 62)
-
-            # -- Choix du zoom
-            if pano_type == 0:
-                zoom = ask_zoom()
-            else:
-                zoom = DEFAULT_ZOOM
-                print()
-                print("  (Photo sphere : zoom sans effet, resolution d'origine utilisee)")
-
-            # -- Telechargement
-            if pano_type == 0:
-                panorama = download_streetview_tiles(session, pano_id, zoom)
-                output   = f"panorama_{pano_id}_z{zoom}.jpg"
-            else:
-                panorama = download_photo_sphere(
-                    session,
-                    meta["photo_url"],
-                    meta["width"],
-                    meta["height"],
-                )
-                output = f"panorama_{pano_id}.jpg"
-
-            if panorama is None:
-                print("  Echec du telechargement. Essayez une autre URL.")
-                continue
-
-            # -- Sauvegarde
-            print(f"  Sauvegarde -> {output}")
-            panorama.save(output, "JPEG", quality=JPEG_QUALITY)
-
-            w, h    = panorama.size
-            size_mb = os.path.getsize(output) / (1024 * 1024)
-            ratio   = w / h if h else 0
-
-            print()
-            print("=" * 62)
-            print(f"  TERMINE  --  {output}")
-            print(f"  Dimensions : {w} x {h} px")
-            print(f"  Ratio      : {ratio:.2f}:1  (cible 2.00:1)")
-            print(f"  Taille     : {size_mb:.1f} Mo")
-            print("=" * 62)
-
-            # -- Redressement optionnel de l'horizon (non destructif)
-            maybe_relevel(session, pano_id, panorama, output)
-
-            print()
-            print("  Utilisable comme carte spherique dans 3ds Max + V-Ray.")
+            process_url(session, raw)
 
 
 if __name__ == "__main__":
