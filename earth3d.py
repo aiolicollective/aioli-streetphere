@@ -719,9 +719,6 @@ def process(raw):
         print("            + cocher 'Import as single mesh' (fusionne les groupes).")
     print("            Fichier en METRES : si tes unites systeme sont en cm,")
     print("            regle l'option d'unites de l'importeur (ou scale x100).")
-    print("            Viewport noir malgre les bitmaps ? Lance le script")
-    print("            max_show_textures.ms (Scripting > Run Script) ou active")
-    print("            'Show Shaded Material in Viewport' sur les materiaux.")
     if not ok:
         print("  (Recentrage echoue : model.obj brut disponible quand meme.)")
 
