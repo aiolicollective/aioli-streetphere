@@ -65,14 +65,6 @@ Rien ne s'installe hors du dossier du repo : Python = stdlib + Pillow du venv
 de `setup.bat`, dépendances Node locales à `earth3d_vendor/node_modules/`,
 rien en global.
 
-## Dépannage
-
-- Matériaux noirs au viewport Max (textures pourtant assignées) :
-  `max_show_textures.ms` (Scripting > Run Script) active « Show Shaded
-  Material in Viewport » sur tous les matériaux d'un coup.
-- Géométrie cassée à l'import Max du packed : vérifier que le fichier vient
-  bien de la v2.3+ (groupes conservés) et cocher « Import as single mesh ».
-
 ## Limites connues (v2.3)
 
 - Protocole non officiel : peut casser sans préavis côté Google.

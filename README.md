@@ -194,7 +194,6 @@ proprement plutot que rendue de maniere deformee.
     +-- run.bat                   Alias de compatibilite -> streetphere.bat
     +-- earth3d.bat               Lancement direct du module 3D
     +-- both.py                   Mode combine : sphere + 3D depuis la meme URL
-    +-- max_show_textures.ms      Script 3ds Max (depannage viewport, optionnel)
     +-- builder.html              Viewer 360° + exporteur HTML autonome (independant)
     +-- EARTH3D.md                Documentation du module 3D
     +-- venv/                     Cree au 1er lancement, ne pas modifier
