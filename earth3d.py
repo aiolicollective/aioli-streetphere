@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-earth3d.py  --  Google Earth 3D -> OBJ a l'echelle (v2, experimental)
+earth3d.py  --  Google Earth 3D -> OBJ a l'echelle (v2.1, experimental)
 ====================================================================
 Depuis une URL Google Maps (ou lat,lng) et un rayon en metres,
 telecharge le mesh 3D texture de l'environnement (donnees Google Earth)
@@ -211,6 +211,13 @@ def ask_octant_level(levels):
 
 
 def ask_detail():
+    print()
+    print("  Detail (niveau de LOD Google Earth) :")
+    print("    17-18 -> masses grossieres, tres leger (blocage/lointain)")
+    print("    19    -> intermediaire")
+    print("    20    -> maximum habituel en ville  <-- recommande")
+    print("  Le poids/temps augmente vite ; au-dela de 20, rarement dispo")
+    print("  (le dump s'arrete de toute facon au niveau existant).")
     while True:
         raw = input(f"  Detail max [Entree = {DEFAULT_DETAIL}] : ").strip()
         if raw == "":
@@ -415,6 +422,36 @@ def recenter_obj(obj_in, obj_out, lat, lng, radius=None):
     return True
 
 
+def convert_bmp_textures(out_dir):
+    """Convertit les textures .bmp (32 bits ABGR, mal lues par 3ds Max :
+    bande noire) en .png et met a jour les references des .mtl.
+    Necessite Pillow (present dans le venv de setup.bat) ; sinon, saute
+    l'etape avec un avertissement."""
+    bmps = [f for f in os.listdir(out_dir) if f.lower().endswith(".bmp")]
+    if not bmps:
+        return
+    try:
+        from PIL import Image
+    except ImportError:
+        print("  [!] Pillow absent : textures laissees en .bmp (32 bits).")
+        print("      3ds Max les lit mal (bande noire) -> lance l'outil via")
+        print("      streetphere.bat apres setup.bat (venv avec Pillow), ou")
+        print("      convertis les .bmp en .png.")
+        return
+    print(f"  [i] Conversion de {len(bmps)} texture(s) .bmp -> .png "
+          f"(compatibilite 3ds Max)...")
+    for f in bmps:
+        p = os.path.join(out_dir, f)
+        Image.open(p).convert("RGB").save(p[:-4] + ".png")
+        os.remove(p)
+    for mtl in ("model.mtl", "model_local.mtl"):
+        p = os.path.join(out_dir, mtl)
+        if os.path.isfile(p):
+            txt = open(p, encoding="utf-8").read()
+            open(p, "w", encoding="utf-8").write(
+                txt.replace(".bmp", ".png").replace(".BMP", ".png"))
+
+
 def write_clean_mtl(mtl_in, mtl_out):
     """Reecrit le .mtl en version minimale (newmtl / Ka / Kd / map_Kd),
     plus digeste pour l'importeur OBJ de 3ds Max."""
@@ -496,6 +533,7 @@ def process(raw):
 
     write_clean_mtl(os.path.join(out_dir, "model.mtl"),
                     os.path.join(out_dir, "model_local.mtl"))
+    convert_bmp_textures(out_dir)
     ok = recenter_obj(os.path.join(out_dir, "model.obj"),
                       os.path.join(out_dir, "model_local.obj"),
                       lat, lng, radius=radius)
@@ -523,7 +561,7 @@ def process(raw):
 def main():
     print()
     print("=" * 62)
-    print("  Earth 3D -> OBJ a l'echelle   (v2 experimental)")
+    print("  Earth 3D -> OBJ a l'echelle   (v2.1 experimental)")
     print("  [Q + Entree] pour quitter")
     print("=" * 62)
     print()
