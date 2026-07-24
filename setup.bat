@@ -89,7 +89,7 @@ echo.
 :install_deps
 echo  [2/3] Installation de requests + Pillow...
 call venv\Scripts\activate.bat
-pip install --upgrade pip --quiet
+python -m pip install --upgrade pip --quiet
 pip install -r requirements.txt
 if errorlevel 1 (
     echo  [ERREUR] Echec pip. Verifiez votre connexion Internet.
@@ -100,15 +100,23 @@ echo  [OK] Dependances installees.
 echo.
 
 :: ── Modules optionnels ────────────────────────────────
-echo  [i] Module 3D (run.bat choix 2, ou earth3d.bat) : Node.js + Git requis
+echo  [i] Module 3D (streetphere.bat choix 2, ou earth3d.bat) : Node.js + Git requis
 node --version >nul 2>&1 && ( echo      Node.js : OK ) || ( echo      Node.js : absent -- https://nodejs.org )
 git --version >nul 2>&1 && ( echo      Git     : OK ) || ( echo      Git     : absent -- https://git-scm.com )
 echo.
 
-:: ── Lancement ────────────────────────────────────────
-echo  [3/3] Lancement de streetview.py...
+:: ── Fin ────────────────────────────────────────────
+echo  [3/3] Installation terminee.
 echo.
-python streetview.py
+echo  Pour utiliser l'outil : double-cliquez sur streetphere.bat
+echo    [1] Sphere 360   [2] Environnement 3D   [3] Les deux
+echo.
+set LAUNCH=
+set /p LAUNCH="  Lancer le menu maintenant ? [Entree = oui / n] > "
+if /i "%LAUNCH%"=="n" goto :fin
+call streetphere.bat
+exit /b 0
 
+:fin
 echo.
 pause
