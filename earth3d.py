@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-earth3d.py  --  Google Earth 3D -> OBJ a l'echelle (v2.2, experimental)
+earth3d.py  --  Google Earth 3D -> OBJ a l'echelle (v2.3, experimental)
 ====================================================================
 Depuis une URL Google Maps (ou lat,lng) et un rayon en metres,
 telecharge le mesh 3D texture de l'environnement (donnees Google Earth)
@@ -457,9 +457,9 @@ ATLAS_GUTTER = 4       # marge entre textures (evite le bleed des mips)
 
 
 def pack_obj(out_dir, obj_name="model_local.obj"):
-    """Fusionne les tuiles en UN SEUL objet avec UN SEUL materiau :
-    toutes les textures sont packees dans un atlas PNG unique et les UV
-    sont re-mappes vers la case de chaque tuile.
+    """Fusionne les tuiles avec UN SEUL materiau : toutes les textures sont
+    packees dans un atlas PNG unique et les UV re-mappes vers la case de
+    chaque tuile. Les tuiles restent en groupes 'g' (voir note importeur Max).
 
     Produit : model_packed.obj + model_packed.mtl + atlas.png.
     Necessite Pillow. Les fichiers multi-textures sont conserves."""
@@ -564,7 +564,7 @@ def pack_obj(out_dir, obj_name="model_local.obj"):
             atlas.paste(im.crop((w - 1, h - 1, w, h)).resize((g, g)), (x + w, y + h))
     atlas.save(os.path.join(out_dir, "atlas.png"))
 
-    # ---- passe 2 : reecrire l'obj (un objet, un materiau, UV remappes) -
+    # ---- passe 2 : reecrire l'obj (un materiau, UV remappes) -----------
     with open(os.path.join(out_dir, "model_packed.mtl"), "w",
               encoding="utf-8") as f:
         f.write("newmtl atlas\nKa 1.000 1.000 1.000\nKd 1.000 1.000 1.000\n"
@@ -575,7 +575,11 @@ def pack_obj(out_dir, obj_name="model_local.obj"):
     with open(obj_in, "r", encoding="utf-8", errors="replace") as fin, \
          open(os.path.join(out_dir, "model_packed.obj"), "w",
               encoding="utf-8") as fout:
-        fout.write("mtllib model_packed.mtl\no model\nusemtl atlas\n")
+        # Un seul materiau, mais on CONSERVE les groupes de tuiles (g) :
+        # l'importeur OBJ de 3ds Max casse la geometrie sur un bloc unique
+        # de plusieurs millions de faces. Blender ne split pas sur les g
+        # (un seul objet) ; dans Max, cocher 'Import as single mesh'.
+        fout.write("mtllib model_packed.mtl\nusemtl atlas\n")
         for line in fin:
             if line.startswith("vt "):
                 p = line.split()
@@ -588,12 +592,16 @@ def pack_obj(out_dir, obj_name="model_local.obj"):
                     u = (x + u * w) / W
                     v = (H - (y + h) + v * h) / H   # origine OBJ en bas
                 fout.write(f"vt {u:.6f} {v:.6f}\n")
-            elif line.startswith(("usemtl", "o ", "mtllib", "g ")):
+            elif line.startswith("o "):
+                fout.write("g " + line[2:])        # objet -> groupe
+            elif line.startswith(("usemtl", "mtllib", "g ")):
                 continue
             else:
                 fout.write(line)
 
-    print(f"  [OK] model_packed.obj : 1 objet, 1 materiau, atlas.png.")
+    print(f"  [OK] model_packed.obj : 1 materiau, atlas.png, tuiles en groupes.")
+    print(f"       Blender : import direct (1 objet). 3ds Max : cocher")
+    print(f"       'Import as single mesh' dans l'importeur OBJ.")
     return True
 
 
@@ -707,6 +715,8 @@ def process(raw):
     print(f"  Blender : File > Import > Wavefront (.obj) -> {best}.")
     print("            1 unite = 1 m.")
     print(f"  3ds Max : Import OBJ -> {best}, cocher 'Import materials'.")
+    if packed:
+        print("            + cocher 'Import as single mesh' (fusionne les groupes).")
     print("            Fichier en METRES : si tes unites systeme sont en cm,")
     print("            regle l'option d'unites de l'importeur (ou scale x100).")
     print("            Viewport noir malgre les bitmaps ? Lance le script")
@@ -719,7 +729,7 @@ def process(raw):
 def main():
     print()
     print("=" * 62)
-    print("  Earth 3D -> OBJ a l'echelle   (v2.2 experimental)")
+    print("  Earth 3D -> OBJ a l'echelle   (v2.3 experimental)")
     print("  [Q + Entree] pour quitter")
     print("=" * 62)
     print()
