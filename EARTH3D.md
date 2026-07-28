@@ -43,11 +43,11 @@ philosophie que streetphere.
 
 ```bat
 streetphere.bat  (choix 2, ou choix 3 pour sphère + 3D d'un coup)
-earth3d.bat      (accès direct)
 ```
 
 Prérequis : Node.js + Git dans le PATH. Python est détecté automatiquement
 (venv → lanceur `py` → PATH → chemins courants → saisie manuelle).
+Le mode 3D n'a pas besoin du venv : aucune dépendance pip.
 Premier lancement : clone + `npm install` automatiques (~1 min).
 
 ## Import

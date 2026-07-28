@@ -52,6 +52,9 @@ Un dossier venv sera cree dans le dossier du projet. Il contient une copie local
 et les librairies necessaires. Cela ne touche absolument pas au reste de votre systeme.
 En l'effacant, tout revient comme avant.
 
+Deux fichiers a double-cliquer, pas plus : **setup.bat** une fois pour installer,
+**streetphere.bat** ensuite pour tout lancer.
+
 ---
 
 ## Utilisation
@@ -142,8 +145,9 @@ texture de l'environnement dans un rayon en metres autour d'un point (donnees
 Google Earth, protocole non officiel -- sans compte, sans cle API) et le
 recentre a l'echelle metrique pour Blender / 3ds Max.
 
-- Lancement : streetphere.bat choix [2], ou earth3d.bat directement
-- Prerequis en plus : Node.js et Git dans le PATH (aucune dependance pip)
+- Lancement : streetphere.bat, choix [2] (ou [3] pour sphere + 3D d'un coup)
+- Prerequis en plus : Node.js et Git dans le PATH (aucune dependance pip :
+  ce mode n'a meme pas besoin du venv)
 - Rayon en metres respecte (geometrie recadree au disque demande)
 - Echelle metrique et origine exactes (1 unite = 1 m, sol a 0)
 - Textures converties en .png (compatibilite 3ds Max)
@@ -195,15 +199,14 @@ proprement plutot que rendue de maniere deformee.
 ## Structure des fichiers
 
     .
-    +-- streetview.py             Script principal (sphere 360)
-    +-- banner.py                 Ecran d'introduction (logo, liens, credits)
+    +-- setup.bat                 Installation (venv + dependances) -- a lancer une fois
+    +-- streetphere.bat           Le lanceur : sphere 360 / 3D / les deux
+    +-- streetview.py             Sphere 360 equirectangulaire
     +-- earth3d.py                Module 3D : mesh texture a l'echelle
+    +-- both.py                   Mode combine : sphere + 3D depuis la meme URL
+    +-- banner.py                 Ecran d'introduction (logo, liens, credits)
     +-- earth3d_radius.js         Helper 3D : selection d'octants par rayon
     +-- requirements.txt          Librairies Python (requests, Pillow, numpy)
-    +-- setup.bat                 Installation (venv + dependances)
-    +-- streetphere.bat           Menu de lancement (sphere 360 / 3D / les deux)
-    +-- earth3d.bat               Lancement direct du module 3D
-    +-- both.py                   Mode combine : sphere + 3D depuis la meme URL
     +-- builder.html              Viewer 360° + exporteur HTML autonome (independant)
     +-- EARTH3D.md                Documentation du module 3D
     +-- CREDITS.md                Sources, licences tierces, avertissement
