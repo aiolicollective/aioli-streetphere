@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
 """
-earth3d.py  --  Google Earth 3D -> OBJ a l'echelle (v2.3, experimental)
-====================================================================
-Depuis une URL Google Maps (ou lat,lng) et un rayon en metres,
-telecharge le mesh 3D texture de l'environnement (donnees Google Earth)
-et le recentre a l'echelle metrique (echelle auto-detectee), pret a
-importer dans Blender ou 3ds Max.
+earth3d.py  --  Google Earth 3D -> true-to-scale OBJ (v2.3, experimental)
+========================================================================
+From a Google Maps URL (or lat,lng) and a radius in metres, downloads the
+textured 3D mesh of the surroundings (Google Earth data) and recentres it
+at metric scale (scale auto-detected), ready to import into Blender or
+3ds Max.
 
-S'appuie sur le protocole non officiel kh.google.com reverse par
-retroplasma/earth-reverse-engineering (clone automatiquement dans
-earth3d_vendor/). Aucun compte, aucune cle API.
+Built on the unofficial kh.google.com protocol, reverse engineered by
+retroplasma/earth-reverse-engineering (cloned automatically into
+earth3d_vendor/). No account, no API key.
 
-Prerequis : Python 3, Node.js, Git dans le PATH.
-Aucune dependance pip (stdlib uniquement).
+Requirements: Python 3, Node.js, Git in the PATH.
+No pip dependency (stdlib only).
 
-Utilisation :
+Usage:
     python earth3d.py
 
-Usage interne uniquement -- donnees propriete de Google.
+Personal / research use -- the data remains the property of Google.
 """
 
 import os
@@ -36,7 +36,7 @@ VENDOR_REPO  = "https://github.com/retroplasma/earth-reverse-engineering.git"
 EXPORTER_DIR = os.path.join(VENDOR_DIR, "exporter")
 OUT_DIR      = os.path.join("output", "3d")
 
-DEFAULT_DETAIL = 20    # niveau de detail max du dump (20 = max habituel)
+DEFAULT_DETAIL = 20    # max detail level of the dump (20 = usual maximum)
 
 # WGS84
 _A  = 6378137.0
@@ -44,11 +44,11 @@ _E2 = 6.69437999014e-3
 
 
 # ==============================================================================
-#  OUTILS SYSTEME
+#  SYSTEM HELPERS
 # ==============================================================================
 
 def _run(cmd, cwd=None, capture=False):
-    """Lance une commande (chaine, shell=True pour compat npm/node Windows)."""
+    """Runs a command (string, shell=True for npm/node compat on Windows)."""
     if capture:
         return subprocess.run(cmd, cwd=cwd, shell=True, capture_output=True,
                               text=True, encoding="utf-8", errors="replace")
@@ -64,24 +64,24 @@ def check_prereq(name, cmd):
 
 
 def ensure_vendor():
-    """Clone l'exporter retroplasma + npm install (premier lancement)."""
+    """Clones the retroplasma exporter + npm install (first run)."""
     if not os.path.isdir(EXPORTER_DIR):
         print()
-        print("  Premier lancement : clonage de earth-reverse-engineering...")
+        print("  First run: cloning earth-reverse-engineering...")
         r = _run(f'git clone --depth 1 "{VENDOR_REPO}" "{VENDOR_DIR}"')
         if r.returncode != 0 or not os.path.isdir(EXPORTER_DIR):
-            print("  [ERREUR] Clonage impossible. Verifiez git + connexion.")
+            print("  [ERROR] Clone failed. Check git + your connection.")
             return False
 
     if not os.path.isdir(os.path.join(EXPORTER_DIR, "node_modules")):
-        print("  Installation des dependances Node (npm install)...")
-        print("  (locale au dossier earth3d_vendor/, rien en global)")
+        print("  Installing the Node dependencies (npm install)...")
+        print("  (local to the earth3d_vendor/ folder, nothing global)")
         r = _run("npm install --no-audit --no-fund", cwd=EXPORTER_DIR)
         if r.returncode != 0:
-            print("  [ERREUR] npm install a echoue.")
+            print("  [ERROR] npm install failed.")
             return False
 
-    # copie/rafraichit le helper de selection par rayon dans l'exporter
+    # copies/refreshes the radius selection helper into the exporter
     src = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                        "earth3d_radius.js")
     if os.path.isfile(src):
@@ -90,24 +90,24 @@ def ensure_vendor():
 
 
 # ==============================================================================
-#  ANALYSE DE L'URL
+#  URL PARSING
 # ==============================================================================
 
 def extract_lat_lng(text):
-    """Extrait (lat, lng) d'une URL Google Maps ou d'une saisie 'lat, lng'."""
+    """Extracts (lat, lng) from a Google Maps URL or from a 'lat, lng' input."""
     text = text.strip()
 
-    # !3d<lat>!4d<lng> : position precise du panorama (prioritaire)
+    # !3d<lat>!4d<lng> : exact position of the panorama (takes precedence)
     m = re.search(r"!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)", text)
     if m:
         return float(m.group(1)), float(m.group(2))
 
-    # @lat,lng, : position de la camera
+    # @lat,lng, : camera position
     m = re.search(r"@(-?\d+\.?\d*),(-?\d+\.?\d*)", text)
     if m:
         return float(m.group(1)), float(m.group(2))
 
-    # saisie directe "lat, lng" ou "lat lng"
+    # direct input "lat, lng" or "lat lng"
     m = re.fullmatch(r"(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)", text)
     if m:
         return float(m.group(1)), float(m.group(2))
@@ -119,30 +119,30 @@ def extract_lat_lng(text):
 #  OCTANTS
 # ==============================================================================
 
-DEFAULT_RADIUS = 150   # rayon par defaut en metres
+DEFAULT_RADIUS = 150   # default radius in metres
 
 
 def ask_radius():
     print()
     while True:
-        raw = input(f"  Rayon autour du point en metres "
-                    f"[Entree = {DEFAULT_RADIUS}] : ").strip()
+        raw = input(f"  Radius around the point, in metres "
+                    f"[Enter = {DEFAULT_RADIUS}] : ").strip()
         if raw == "":
             return DEFAULT_RADIUS
         if raw.isdigit() and 10 <= int(raw) <= 3000:
             return int(raw)
-        print("  Valeur invalide (10 a 3000 m).")
+        print("  Invalid value (10 to 3000 m).")
 
 
 def find_octants_radius(lat, lng, radius):
-    """Appelle earth3d_radius.js : octants couvrant le disque de rayon donne.
-    Retourne (niveau, taille_cellule_m, [octants]) ou None."""
+    """Calls earth3d_radius.js: octants covering the disc of the given radius.
+    Returns (level, cell_size_m, [octants]) or None."""
     print()
-    print("  Selection des octants dans le rayon (requetes kh.google.com)...")
+    print("  Selecting the octants inside the radius (kh.google.com requests)...")
     r = _run(f"node earth3d_radius.js {lat} {lng} {radius}",
              cwd=EXPORTER_DIR, capture=True)
     if r.returncode != 0:
-        print("  [!] Echec de la selection par rayon :")
+        print("  [!] Radius-based selection failed:")
         print((r.stderr or "").strip()[:1500])
         return None
 
@@ -162,14 +162,14 @@ def find_octants_radius(lat, lng, radius):
 
 
 def find_octants(lat, lng):
-    """Appelle lat_long_to_octant.js et parse la sortie.
-    Retourne {niveau(int): [octants(str)]}."""
+    """Calls lat_long_to_octant.js and parses its output.
+    Returns {level(int): [octants(str)]}."""
     print()
-    print("  Recherche des octants (requetes vers kh.google.com)...")
+    print("  Looking for octants (requests to kh.google.com)...")
     r = _run(f"node lat_long_to_octant.js {lat} {lng}",
              cwd=EXPORTER_DIR, capture=True)
     if r.returncode != 0:
-        print("  [ERREUR] lat_long_to_octant a echoue :")
+        print("  [ERROR] lat_long_to_octant failed:")
         print((r.stderr or "").strip()[:2000])
         return None
 
@@ -189,42 +189,42 @@ def find_octants(lat, lng):
 
 
 def ask_octant_level(levels):
-    """Choix du niveau d'octant = taille de la zone. Defaut : le plus profond
-    (zone la plus petite autour du point)."""
+    """Octant level = size of the area. Default: the deepest one
+    (the smallest area around the point)."""
     deepest = max(levels)
     print()
-    print("  Zone a extraire (niveau d'octant : + profond = + petit) :")
+    print("  Area to extract (octant level: deeper = smaller):")
     print()
     for lvl in sorted(levels):
-        approx = 40000 / (2 ** lvl) * 1000   # ordre de grandeur cote en m
-        mark = "  <-- defaut (zone la plus locale)" if lvl == deepest else ""
-        print(f"    {lvl:2d}  ->  ~{approx:6.0f} m de cote, "
+        approx = 40000 / (2 ** lvl) * 1000   # rough order of magnitude, side in m
+        mark = "  <-- default (most local area)" if lvl == deepest else ""
+        print(f"    {lvl:2d}  ->  ~{approx:6.0f} m across, "
               f"{len(levels[lvl])} octant(s){mark}")
     print()
     while True:
-        raw = input(f"  Niveau [Entree = {deepest}] : ").strip()
+        raw = input(f"  Level [Enter = {deepest}] : ").strip()
         if raw == "":
             return deepest
         if raw.isdigit() and int(raw) in levels:
             return int(raw)
-        print(f"  Valeur invalide. Niveaux disponibles : {sorted(levels)}")
+        print(f"  Invalid value. Available levels: {sorted(levels)}")
 
 
 def ask_detail():
     print()
-    print("  Detail (niveau de LOD Google Earth) :")
-    print("    17-18 -> masses grossieres, tres leger (blocage/lointain)")
-    print("    19    -> intermediaire")
-    print("    20    -> maximum habituel en ville  <-- recommande")
-    print("  Le poids/temps augmente vite ; au-dela de 20, rarement dispo")
-    print("  (le dump s'arrete de toute facon au niveau existant).")
+    print("  Detail (Google Earth LOD level):")
+    print("    17-18 -> coarse volumes, very light (blocking/distant)")
+    print("    19    -> intermediate")
+    print("    20    -> usual maximum in cities  <-- recommended")
+    print("  Weight/time grows fast; above 20 it is rarely available")
+    print("  (the dump stops at the deepest existing level anyway).")
     while True:
-        raw = input(f"  Detail max [Entree = {DEFAULT_DETAIL}] : ").strip()
+        raw = input(f"  Max detail [Enter = {DEFAULT_DETAIL}] : ").strip()
         if raw == "":
             return DEFAULT_DETAIL
         if raw.isdigit() and 1 <= int(raw) <= 30:
             return int(raw)
-        print("  Valeur invalide (1-30).")
+        print("  Invalid value (1-30).")
 
 
 # ==============================================================================
@@ -232,18 +232,18 @@ def ask_detail():
 # ==============================================================================
 
 def dump_octants(octants, detail):
-    """Lance dump_obj.js (sortie en direct) et retourne le dossier produit."""
+    """Runs dump_obj.js (live output) and returns the folder it produced."""
     obj_root = os.path.join(EXPORTER_DIR, "downloaded_files", "obj")
     before = set(os.listdir(obj_root)) if os.path.isdir(obj_root) else set()
 
     cmd = f"node dump_obj.js {' '.join(octants)} {detail} --parallel-search"
     print()
-    print(f"  Telechargement du mesh ({len(octants)} octant(s), "
-          f"detail {detail})... Ca peut prendre plusieurs minutes.")
+    print(f"  Downloading the mesh ({len(octants)} octant(s), "
+          f"detail {detail})... This can take several minutes.")
     print()
     r = _run(cmd, cwd=EXPORTER_DIR)
     if r.returncode != 0:
-        print("  [ERREUR] dump_obj a echoue.")
+        print("  [ERROR] dump_obj failed.")
         return None
 
     after = set(os.listdir(obj_root)) if os.path.isdir(obj_root) else set()
@@ -251,14 +251,14 @@ def dump_octants(octants, detail):
            if os.path.isdir(os.path.join(obj_root, d))]
     if new:
         return os.path.join(obj_root, new[0])
-    # dossier deja existant (re-dump) : prendre le plus recent
+    # folder already there (re-dump): take the most recent one
     dirs = [os.path.join(obj_root, d) for d in after]
     dirs = [d for d in dirs if os.path.isdir(d)]
     return max(dirs, key=os.path.getmtime) if dirs else None
 
 
 # ==============================================================================
-#  RECENTRAGE METRIQUE (ECEF -> local, Y-up, metres)
+#  METRIC RECENTRING (ECEF -> local, Y-up, metres)
 # ==============================================================================
 
 def _geodetic_to_ecef(lat_deg, lng_deg, h=0.0):
@@ -280,30 +280,30 @@ def _enu_basis(lat_deg, lng_deg):
     return e, n, u
 
 
-R_GOOGLE = 6371010.0   # rayon de la sphere Google Earth (rocktree)
+R_GOOGLE = 6371010.0   # radius of the Google Earth sphere (rocktree)
 
 
 def recenter_obj(obj_in, obj_out, lat, lng, radius=None):
-    """Recentre model.obj sur (lat,lng), sol a ~0, unites = metres.
+    """Recentres model.obj on (lat,lng), ground at ~0, units = metres.
 
-    Convention verifiee (test Sydney 2026-07) : le globe Google Earth est une
-    SPHERE, la latitude geodesique y est utilisee comme latitude spherique.
-    L'origine locale est donc prise dans cette convention (pas d'ellipsoide).
-    L'echelle est auto-detectee via la norme moyenne des vertices.
+    Verified convention (Sydney test, 2026-07): the Google Earth globe is a
+    SPHERE, and geodetic latitude is used there as spherical latitude.
+    The local origin is therefore taken in that convention (no ellipsoid).
+    The scale is auto-detected from the mean norm of the vertices.
 
-    Si radius est fourni, la geometrie est RECADREE : seules les faces dont
-    tous les sommets sont dans le rayon (+ marge) sont conservees.
+    If radius is given, the geometry is CROPPED: only the faces whose
+    vertices all sit inside the radius (+ margin) are kept.
 
-    Ecrit en convention OBJ standard Y-up (X=est, Y=altitude, Z=sud) :
-    Blender et 3ds Max remettent le Z-up a l'import automatiquement.
-    Reference model_local.mtl (version nettoyee pour 3ds Max)."""
+    Written in the standard Y-up OBJ convention (X=east, Y=altitude, Z=south):
+    Blender and 3ds Max restore Z-up on import automatically.
+    References model_local.mtl (cleaned-up version for 3ds Max)."""
     import array
 
     (ex, ey, ez), (nx, ny, nz), (ux, uy, uz) = _enu_basis(lat, lng)
 
-    # ---- passe 1 : lire les vertices, projeter sur les axes locaux -----
-    # E et N sont directement relatifs au meridien/parallele du point
-    # demande (axes e/n perpendiculaires a sa direction radiale).
+    # ---- pass 1: read the vertices, project them onto the local axes ---
+    # E and N are directly relative to the meridian/parallel of the requested
+    # point (e/n axes perpendicular to its radial direction).
     E = array.array("d"); N = array.array("d"); U = array.array("d")
     sx = sy = sz = 0.0
     with open(obj_in, "r", encoding="utf-8", errors="replace") as f:
@@ -318,57 +318,57 @@ def recenter_obj(obj_in, obj_out, lat, lng, radius=None):
 
     n = len(E)
     if n == 0:
-        print("  [ERREUR] Aucun vertex dans le .obj.")
+        print("  [ERROR] No vertex in the .obj.")
         return False
 
-    # ---- echelle auto (norme moyenne ~ rayon de la sphere Google) ------
+    # ---- auto scale (mean norm ~ radius of the Google sphere) ---------
     raw_norm = math.sqrt((sx / n) ** 2 + (sy / n) ** 2 + (sz / n) ** 2)
     if raw_norm < 1e-12:
-        print("  [ERREUR] Vertices degeneres (norme nulle).")
+        print("  [ERROR] Degenerate vertices (zero norm).")
         return False
     scale = R_GOOGLE / raw_norm
     if 0.99 < scale < 1.01:
-        scale = 1.0                          # deja en metres
+        scale = 1.0                          # already in metres
     else:
-        print(f"  [i] Dump en unites non metriques -> "
-              f"facteur d'echelle x{scale:.6g} applique.")
+        print(f"  [i] Dump in non-metric units -> "
+              f"scale factor x{scale:.6g} applied.")
     if scale != 1.0:
         for i in range(n):
             E[i] *= scale; N[i] *= scale; U[i] *= scale
 
-    # garde-fou si la convention differait malgre tout
+    # guard rail in case the convention differed after all
     mE = sum(E) / n
     mN = sum(N) / n
     dE = dN = 0.0
     horiz = math.hypot(mE, mN)
     if horiz > 5000:
-        print(f"  [!] Zone detectee a {horiz/1000:.1f} km de l'origine "
-              f"calculee -> recentrage sur le centre de la zone.")
+        print(f"  [!] Area detected {horiz/1000:.1f} km away from the computed "
+              f"origin -> recentring on the centre of the area.")
         dE, dN = mE, mN
 
-    u_min = min(U)                          # cale le sol vers 0
+    u_min = min(U)                          # pin the ground to 0
 
-    # ---- selection des vertices (recadrage au rayon) -------------------
+    # ---- vertex selection (cropping to the radius) ---------------------
     keep = bytearray(n)
     if radius:
-        rk2 = (float(radius) + 15.0) ** 2   # marge ~ taille de triangle max
+        rk2 = (float(radius) + 15.0) ** 2   # margin ~ max triangle size
         kept = 0
         for i in range(n):
             eE = E[i] - dE; eN = N[i] - dN
             if eE * eE + eN * eN <= rk2:
                 keep[i] = 1; kept += 1
         if kept == 0:
-            print("  [!] Rien dans le rayon demande ?! Recadrage annule.")
+            print("  [!] Nothing inside the requested radius?! Cropping cancelled.")
             for i in range(n):
                 keep[i] = 1
         else:
-            print(f"  [i] Recadrage au rayon {radius} m : "
-                  f"{kept}/{n} vertices conserves.")
+            print(f"  [i] Cropping to the {radius} m radius: "
+                  f"{kept}/{n} vertices kept.")
     else:
         for i in range(n):
             keep[i] = 1
 
-    # nouvel index (1-base) de chaque vertex conserve, 0 = supprime
+    # new (1-based) index of each kept vertex, 0 = removed
     remap = array.array("l", [0]) * (n + 1)
     nv = 0
     for i in range(n):
@@ -376,7 +376,7 @@ def recenter_obj(obj_in, obj_out, lat, lng, radius=None):
             nv += 1
             remap[i + 1] = nv
 
-    # ---- passe 2 : reecrire le fichier ---------------------------------
+    # ---- pass 2: rewrite the file --------------------------------------
     vi = 0
     dropped_faces = 0
     with open(obj_in, "r", encoding="utf-8", errors="replace") as fin, \
@@ -385,7 +385,7 @@ def recenter_obj(obj_in, obj_out, lat, lng, radius=None):
             if line.startswith("v "):
                 vi += 1
                 if keep[vi - 1]:
-                    # ENU -> OBJ Y-up : x=est, y=altitude, z=-nord (sud)
+                    # ENU -> OBJ Y-up: x=east, y=altitude, z=-north (south)
                     fout.write(f"v {E[vi-1]-dE:.3f} "
                                f"{U[vi-1]-u_min:.3f} {-(N[vi-1]-dN):.3f}\n")
             elif line.startswith("f "):
@@ -414,32 +414,32 @@ def recenter_obj(obj_in, obj_out, lat, lng, radius=None):
     kE = [E[i] - dE for i in range(n) if keep[i]]
     kN = [N[i] - dN for i in range(n) if keep[i]]
     kU = [U[i] - u_min for i in range(n) if keep[i]]
-    print(f"  [OK] {nv} vertices ({dropped_faces} faces hors rayon retirees)")
-    print(f"       zone {max(kE)-min(kE):.0f} x {max(kN)-min(kN):.0f} m, "
-          f"hauteur {max(kU):.0f} m | 1 unite = 1 m")
-    print(f"       centre du mesh a {math.hypot(mE-dE, mN-dN):.0f} m "
-          f"de l'origine")
+    print(f"  [OK] {nv} vertices ({dropped_faces} faces outside the radius removed)")
+    print(f"       area {max(kE)-min(kE):.0f} x {max(kN)-min(kN):.0f} m, "
+          f"height {max(kU):.0f} m | 1 unit = 1 m")
+    print(f"       mesh centre {math.hypot(mE-dE, mN-dN):.0f} m "
+          f"from the origin")
     return True
 
 
 def convert_bmp_textures(out_dir):
-    """Convertit les textures .bmp (32 bits ABGR, mal lues par 3ds Max :
-    bande noire) en .png et met a jour les references des .mtl.
-    Necessite Pillow (present dans le venv de setup.bat) ; sinon, saute
-    l'etape avec un avertissement."""
+    """Converts the .bmp textures (32-bit ABGR, misread by 3ds Max:
+    black band) to .png and updates the references in the .mtl files.
+    Requires Pillow (present in the setup.bat venv); otherwise the step
+    is skipped with a warning."""
     bmps = [f for f in os.listdir(out_dir) if f.lower().endswith(".bmp")]
     if not bmps:
         return
     try:
         from PIL import Image
     except ImportError:
-        print("  [!] Pillow absent : textures laissees en .bmp (32 bits).")
-        print("      3ds Max les lit mal (bande noire) -> lance l'outil via")
-        print("      streetphere.bat apres setup.bat (venv avec Pillow), ou")
-        print("      convertis les .bmp en .png.")
+        print("  [!] Pillow missing: textures left as .bmp (32-bit).")
+        print("      3ds Max reads them badly (black band) -> run the tool via")
+        print("      streetphere.bat after setup.bat (venv with Pillow), or")
+        print("      convert the .bmp files to .png yourself.")
         return
-    print(f"  [i] Conversion de {len(bmps)} texture(s) .bmp -> .png "
-          f"(compatibilite 3ds Max)...")
+    print(f"  [i] Converting {len(bmps)} .bmp texture(s) -> .png "
+          f"(3ds Max compatibility)...")
     for f in bmps:
         p = os.path.join(out_dir, f)
         Image.open(p).convert("RGB").save(p[:-4] + ".png")
@@ -452,31 +452,31 @@ def convert_bmp_textures(out_dir):
                 txt.replace(".bmp", ".png").replace(".BMP", ".png"))
 
 
-ATLAS_MAX = 16384      # taille max de l'atlas (px), lisible partout
-ATLAS_GUTTER = 4       # marge entre textures (evite le bleed des mips)
+ATLAS_MAX = 16384      # max atlas size (px), readable everywhere
+ATLAS_GUTTER = 4       # margin between textures (avoids mip bleeding)
 
 
 def pack_obj(out_dir, obj_name="model_local.obj"):
-    """Fusionne les tuiles avec UN SEUL materiau : toutes les textures sont
-    packees dans un atlas PNG unique et les UV re-mappes vers la case de
-    chaque tuile. Les tuiles restent en groupes 'g' (voir note importeur Max).
+    """Merges the tiles with ONE SINGLE material: every texture is packed
+    into a single PNG atlas and the UVs are remapped to each tile's slot.
+    The tiles stay in 'g' groups (see the note about the Max importer).
 
-    Produit : model_packed.obj + model_packed.mtl + atlas.png.
-    Necessite Pillow. Les fichiers multi-textures sont conserves."""
+    Produces: model_packed.obj + model_packed.mtl + atlas.png.
+    Requires Pillow. The multi-texture files are kept."""
     import array
     try:
         from PIL import Image
     except ImportError:
-        print("  [!] Pillow absent : packing atlas impossible (venv setup.bat).")
+        print("  [!] Pillow missing: atlas packing impossible (setup.bat venv).")
         return False
 
     obj_in  = os.path.join(out_dir, obj_name)
     mtl_in  = os.path.join(out_dir, "model_local.mtl")
     if not (os.path.isfile(obj_in) and os.path.isfile(mtl_in)):
-        print("  [!] Fichiers manquants pour le packing.")
+        print("  [!] Missing files for packing.")
         return False
 
-    # ---- materiaux -> fichiers texture ---------------------------------
+    # ---- materials -> texture files ------------------------------------
     mat_tex = {}
     cur = None
     with open(mtl_in, "r", encoding="utf-8", errors="replace") as f:
@@ -487,9 +487,9 @@ def pack_obj(out_dir, obj_name="model_local.obj"):
             elif t.startswith("map_Kd ") and cur:
                 mat_tex[cur] = t.split(None, 1)[1]
 
-    # ---- passe 1 : associer chaque vt a son materiau -------------------
-    mats = []                      # ordre d'apparition
-    mat_of_vt = array.array("i")   # index materiau par vt (ordre du fichier)
+    # ---- pass 1: map each vt to its material ---------------------------
+    mats = []                      # order of appearance
+    mat_of_vt = array.array("i")   # material index per vt (file order)
     cur_idx = -1
     with open(obj_in, "r", encoding="utf-8", errors="replace") as f:
         for line in f:
@@ -503,21 +503,21 @@ def pack_obj(out_dir, obj_name="model_local.obj"):
 
     used = [m for m in mats if m in mat_tex]
     if not used:
-        print("  [!] Aucune texture referencee : packing annule.")
+        print("  [!] No texture referenced: packing cancelled.")
         return False
 
-    # ---- chargement des textures + layout (shelf packing) --------------
+    # ---- loading the textures + layout (shelf packing) -----------------
     imgs = {}
     for m in set(used):
         p = os.path.join(out_dir, mat_tex[m])
         if not os.path.isfile(p):
-            print(f"  [!] Texture absente : {mat_tex[m]} -> packing annule.")
+            print(f"  [!] Texture missing: {mat_tex[m]} -> packing cancelled.")
             return False
         imgs[m] = Image.open(p).convert("RGB")
 
     g = ATLAS_GUTTER
     order = sorted(set(used), key=lambda m: -imgs[m].height)
-    # largeur cible ~ carre
+    # target width ~ square
     total_area = sum((imgs[m].width + g) * (imgs[m].height + g) for m in order)
     atlas_w = min(ATLAS_MAX, max(1024, 1 << (int(total_area ** 0.5) - 1).bit_length()))
 
@@ -543,16 +543,16 @@ def pack_obj(out_dir, obj_name="model_local.obj"):
         atlas_h = min(ATLAS_MAX, 1 << (real_h - 1).bit_length())
 
     if scale < 1.0:
-        print(f"  [i] Atlas plafonne a {ATLAS_MAX}px : textures reduites "
-              f"a {scale*100:.0f}% pour tenir.")
+        print(f"  [i] Atlas capped at {ATLAS_MAX}px: textures scaled down "
+              f"to {scale*100:.0f}% to fit.")
 
     print(f"  [i] Atlas {atlas_w} x {atlas_h} px, "
-          f"{len(set(used))} textures packees...")
+          f"{len(set(used))} textures packed...")
     atlas = Image.new("RGB", (atlas_w, atlas_h), (0, 0, 0))
     for m, (x, y, w, h) in pos.items():
         im = imgs[m] if (w, h) == imgs[m].size else imgs[m].resize((w, h))
         atlas.paste(im, (x, y))
-        # bleed : duplique bords et coins dans la marge
+        # bleed: duplicates the edges and corners into the margin
         if g:
             atlas.paste(im.crop((0, 0, w, 1)).resize((w, g)), (x, y - g))
             atlas.paste(im.crop((0, h - 1, w, h)).resize((w, g)), (x, y + h))
@@ -564,7 +564,7 @@ def pack_obj(out_dir, obj_name="model_local.obj"):
             atlas.paste(im.crop((w - 1, h - 1, w, h)).resize((g, g)), (x + w, y + h))
     atlas.save(os.path.join(out_dir, "atlas.png"))
 
-    # ---- passe 2 : reecrire l'obj (un materiau, UV remappes) -----------
+    # ---- pass 2: rewrite the obj (one material, remapped UVs) ----------
     with open(os.path.join(out_dir, "model_packed.mtl"), "w",
               encoding="utf-8") as f:
         f.write("newmtl atlas\nKa 1.000 1.000 1.000\nKd 1.000 1.000 1.000\n"
@@ -575,10 +575,10 @@ def pack_obj(out_dir, obj_name="model_local.obj"):
     with open(obj_in, "r", encoding="utf-8", errors="replace") as fin, \
          open(os.path.join(out_dir, "model_packed.obj"), "w",
               encoding="utf-8") as fout:
-        # Un seul materiau, mais on CONSERVE les groupes de tuiles (g) :
-        # l'importeur OBJ de 3ds Max casse la geometrie sur un bloc unique
-        # de plusieurs millions de faces. Blender ne split pas sur les g
-        # (un seul objet) ; dans Max, cocher 'Import as single mesh'.
+        # One single material, but we KEEP the tile groups (g):
+        # the 3ds Max OBJ importer breaks the geometry on a single block of
+        # several million faces. Blender does not split on g (one object);
+        # in Max, tick 'Import as single mesh'.
         fout.write("mtllib model_packed.mtl\nusemtl atlas\n")
         for line in fin:
             if line.startswith("vt "):
@@ -590,24 +590,24 @@ def pack_obj(out_dir, obj_name="model_local.obj"):
                 if m in pos:
                     x, y, w, h = pos[m]
                     u = (x + u * w) / W
-                    v = (H - (y + h) + v * h) / H   # origine OBJ en bas
+                    v = (H - (y + h) + v * h) / H   # OBJ origin at the bottom
                 fout.write(f"vt {u:.6f} {v:.6f}\n")
             elif line.startswith("o "):
-                fout.write("g " + line[2:])        # objet -> groupe
+                fout.write("g " + line[2:])        # object -> group
             elif line.startswith(("usemtl", "mtllib", "g ")):
                 continue
             else:
                 fout.write(line)
 
-    print(f"  [OK] model_packed.obj : 1 materiau, atlas.png, tuiles en groupes.")
-    print(f"       Blender : import direct (1 objet). 3ds Max : cocher")
-    print(f"       'Import as single mesh' dans l'importeur OBJ.")
+    print(f"  [OK] model_packed.obj : 1 material, atlas.png, tiles as groups.")
+    print(f"       Blender: direct import (1 object). 3ds Max: tick")
+    print(f"       'Import as single mesh' in the OBJ importer.")
     return True
 
 
 def write_clean_mtl(mtl_in, mtl_out):
-    """Reecrit le .mtl en version minimale (newmtl / Ka / Kd / map_Kd),
-    plus digeste pour l'importeur OBJ de 3ds Max."""
+    """Rewrites the .mtl in a minimal form (newmtl / Ka / Kd / map_Kd),
+    easier to digest for the 3ds Max OBJ importer."""
     if not os.path.isfile(mtl_in):
         return False
     mats = []
@@ -632,14 +632,14 @@ def write_clean_mtl(mtl_in, mtl_out):
 
 
 # ==============================================================================
-#  PROGRAMME PRINCIPAL
+#  MAIN PROGRAM
 # ==============================================================================
 
 def process(raw):
     coords = extract_lat_lng(raw)
     if not coords:
-        print("  [ERREUR] Impossible d'extraire lat/lng. Collez une URL Google")
-        print("  Maps (avec @lat,lng ou !3d..!4d..) ou tapez 'lat, lng'.")
+        print("  [ERROR] Could not extract lat/lng. Paste a Google Maps URL")
+        print("  (with @lat,lng or !3d..!4d..) or type 'lat, lng'.")
         return
     lat, lng = coords
 
@@ -652,14 +652,14 @@ def process(raw):
     found  = find_octants_radius(lat, lng, radius)
     if found:
         lvl, cell_m, octants = found
-        print(f"  [OK] {len(octants)} octant(s) niveau {lvl} "
-              f"(cellules ~{cell_m} m) couvrent le rayon de {radius} m.")
+        print(f"  [OK] {len(octants)} octant(s) at level {lvl} "
+              f"(~{cell_m} m cells) cover the {radius} m radius.")
     else:
-        print("  [!] Selection par rayon indisponible -> mode niveau (fallback).")
+        print("  [!] Radius selection unavailable -> level mode (fallback).")
         levels = find_octants(lat, lng)
         if not levels:
-            print("  [ERREUR] Aucun octant trouve. Zone sans 3D, ou protocole")
-            print("  modifie cote Google. Essayez un autre point.")
+            print("  [ERROR] No octant found. Area without 3D data, or the")
+            print("  protocol changed on Google's side. Try another point.")
             return
         lvl     = ask_octant_level(levels)
         octants = levels[lvl]
@@ -673,10 +673,10 @@ def process(raw):
 
     obj_in = os.path.join(dump_dir, "model.obj")
     if not os.path.isfile(obj_in):
-        print(f"  [ERREUR] model.obj introuvable dans {dump_dir}")
+        print(f"  [ERROR] model.obj not found in {dump_dir}")
         return
 
-    # dossier de sortie
+    # output folder
     zone    = f"r{radius}m" if radius else f"lvl{lvl}"
     name    = f"{lat:.5f}_{lng:.5f}_{zone}_d{detail}".replace("-", "m")
     out_dir = os.path.join(OUT_DIR, name)
@@ -694,48 +694,48 @@ def process(raw):
     packed = False
     if ok:
         print()
-        ans = input("  Packer en 1 seul objet + atlas de textures ? "
-                    "[Entree = oui / n] : ").strip().lower()
-        if ans not in ("n", "non", "no"):
+        ans = input("  Pack into a single object + texture atlas? "
+                    "[Enter = yes / n] : ").strip().lower()
+        if ans not in ("n", "no", "non"):
             packed = pack_obj(out_dir)
 
     print()
     print("=" * 62)
-    print(f"  TERMINE  --  {out_dir}")
+    print(f"  DONE  --  {out_dir}")
     if packed:
-        print(f"    model_packed.obj -> 1 objet, 1 materiau, atlas.png  <-- importer celui-ci")
-        print(f"    model_local.obj  -> multi-textures (recentre, metres)")
+        print(f"    model_packed.obj -> 1 object, 1 material, atlas.png  <-- import this one")
+        print(f"    model_local.obj  -> multi-texture (recentred, metres)")
     else:
-        print(f"    model_local.obj  -> recentre, metres  <-- importer celui-ci")
-    print(f"    model_local.mtl  -> materiaux nettoyes (3ds Max friendly)")
-    print(f"    model.obj/.mtl   -> bruts geocentriques (debug)")
+        print(f"    model_local.obj  -> recentred, metres  <-- import this one")
+    print(f"    model_local.mtl  -> cleaned-up materials (3ds Max friendly)")
+    print(f"    model.obj/.mtl   -> raw geocentric (debug)")
     print("=" * 62)
     print()
     best = "model_packed.obj" if packed else "model_local.obj"
     print(f"  Blender : File > Import > Wavefront (.obj) -> {best}.")
-    print("            1 unite = 1 m.")
-    print(f"  3ds Max : Import OBJ -> {best}, cocher 'Import materials'.")
+    print("            1 unit = 1 m.")
+    print(f"  3ds Max : Import OBJ -> {best}, tick 'Import materials'.")
     if packed:
-        print("            + cocher 'Import as single mesh' (fusionne les groupes).")
-    print("            Fichier en METRES : si tes unites systeme sont en cm,")
-    print("            regle l'option d'unites de l'importeur (ou scale x100).")
+        print("            + tick 'Import as single mesh' (merges the groups).")
+    print("            File is in METRES: if your system units are cm,")
+    print("            set the importer's unit option (or scale x100).")
     if not ok:
-        print("  (Recentrage echoue : model.obj brut disponible quand meme.)")
+        print("  (Recentring failed: the raw model.obj is still available.)")
 
 
 def main():
     print()
     print("=" * 62)
-    print("  Earth 3D -> OBJ a l'echelle   (v2.3 experimental)")
-    print("  [Q + Entree] pour quitter")
+    print("  Earth 3D -> true-to-scale OBJ   (v2.3 experimental)")
+    print("  [Q + Enter] to quit")
     print("=" * 62)
     print()
-    print("  Verification des prerequis :")
+    print("  Checking requirements:")
     ok_node = check_prereq("Node.js", "node --version")
     ok_git  = check_prereq("Git",     "git --version")
     if not (ok_node and ok_git):
         print()
-        print("  Installez les prerequis manquants puis relancez.")
+        print("  Install the missing requirements and run it again.")
         print("  Node.js : https://nodejs.org  |  Git : https://git-scm.com")
         sys.exit(1)
 
@@ -744,14 +744,14 @@ def main():
 
     while True:
         print()
-        print("  URL Google Maps (ou lat, lng) :")
+        print("  Google Maps URL (or lat, lng):")
         print()
         raw = input("  > ").strip()
         if not raw:
             continue
         if raw.lower() == "q":
             print()
-            print("  Au revoir.")
+            print("  Goodbye.")
             print()
             break
         process(raw)
