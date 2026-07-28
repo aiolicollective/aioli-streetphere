@@ -6,7 +6,7 @@ Enchaine pour chaque URL Google Maps :
   1. le telechargement du panorama equirectangulaire (streetview.py)
   2. l'extraction du mesh 3D a l'echelle (earth3d.py)
 
-Lance via run.bat (choix 3). Requiert le venv (setup.bat) + Node/Git.
+Lance via streetphere.bat (choix 3). Requiert le venv (setup.bat) + Node/Git.
 """
 
 import requests

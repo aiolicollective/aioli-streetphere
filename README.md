@@ -202,7 +202,6 @@ proprement plutot que rendue de maniere deformee.
     +-- requirements.txt          Librairies Python (requests, Pillow, numpy)
     +-- setup.bat                 Installation (venv + dependances)
     +-- streetphere.bat           Menu de lancement (sphere 360 / 3D / les deux)
-    +-- run.bat                   Alias de compatibilite -> streetphere.bat
     +-- earth3d.bat               Lancement direct du module 3D
     +-- both.py                   Mode combine : sphere + 3D depuis la meme URL
     +-- builder.html              Viewer 360° + exporteur HTML autonome (independant)
