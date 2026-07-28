@@ -2,20 +2,20 @@
 """
 streetview.py  --  Google Street View Panorama Downloader
 =========================================================
-Accepte une URL Google Maps ou un panoID brut.
-Detecte automatiquement le type de panorama et utilise
-la methode de telechargement appropriee :
+Accepts a Google Maps URL or a raw panoID.
+Detects the panorama type automatically and uses the
+matching download method:
 
-  - Street View officiel (!2e0) :
-    tiles via cbk0.google.com  ->  assemblage en equirectangulaire
+  - Official Street View (!2e0):
+    tiles from cbk0.google.com  ->  stitched into an equirectangular image
 
-  - Photo sphere utilisateur (!2e1, !2e10, etc.) :
-    telechargement direct depuis lh3.googleusercontent.com
+  - User photo sphere (!2e1, !2e10, etc.):
+    direct download from lh3.googleusercontent.com
 
-Utilisation :
+Usage:
     python streetview.py
 
-Dependances : requests, Pillow  (voir setup.bat)
+Dependencies: requests, Pillow  (see setup.bat)
 """
 
 import os
@@ -37,7 +37,7 @@ from io import BytesIO
 #  CONFIGURATION
 # ==============================================================================
 
-DEFAULT_ZOOM = 4   # Valeur par defaut si l'utilisateur appuie sur Entree
+DEFAULT_ZOOM = 4   # Default value when the user just presses Enter
 
 OUT_DIR      = os.path.join("output", "spheres")
 TILES_DIR    = os.path.join(OUT_DIR, "tiles")
@@ -46,13 +46,13 @@ TIMEOUT      = 20
 RETRIES      = 2
 MAX_WORKERS  = 8
 
-# -- Redressement (de-tilt) de l'horizon
-TILT_THRESHOLD_DEG = 0.5   # en-dessous : pano considere droit, pas de correction
+# -- Horizon levelling (de-tilt)
+TILT_THRESHOLD_DEG = 0.5   # below this: pano considered straight, no correction
 PHOTOMETA_URL      = "https://www.google.com/maps/photometa/v1"
 
 
 # ==============================================================================
-#  DONNEES INTERNES
+#  INTERNAL DATA
 # ==============================================================================
 
 GRID = {
@@ -72,7 +72,7 @@ _PANOID_RE = re.compile(r"[A-Za-z0-9_\-]{20,25}")
 
 
 # ==============================================================================
-#  ANALYSE DE L'URL
+#  URL PARSING
 # ==============================================================================
 
 def extract_pano_id(text):
@@ -126,22 +126,22 @@ def parse_url_metadata(url):
 
 
 # ==============================================================================
-#  CHOIX DU ZOOM (interactif)
+#  ZOOM SELECTION (interactive)
 # ==============================================================================
 
 def ask_zoom():
     print()
-    print("  Choisissez le niveau de resolution :")
+    print("  Choose the resolution level:")
     print()
-    print("    3  ->   4 096 x  2 048 px    32 tuiles   basse resolution")
-    print("    4  ->   8 192 x  4 096 px   128 tuiles   recommande  <--")
-    print("    5  ->  13 312 x  6 656 px   338 tuiles   haute resolution")
-    print("           Attention zoom 5 : Google ne fournit pas toujours toutes")
-    print("           les tuiles -- les zones manquantes restent noires.")
+    print("    3  ->   4 096 x  2 048 px    32 tiles   low resolution")
+    print("    4  ->   8 192 x  4 096 px   128 tiles   recommended  <--")
+    print("    5  ->  13 312 x  6 656 px   338 tiles   high resolution")
+    print("           Careful with zoom 5: Google does not always serve every")
+    print("           tile -- the missing areas stay black.")
     print()
 
     while True:
-        raw = input(f"  Zoom [Entree = {DEFAULT_ZOOM}] : ").strip()
+        raw = input(f"  Zoom [Enter = {DEFAULT_ZOOM}] : ").strip()
 
         if raw == "":
             return DEFAULT_ZOOM
@@ -149,11 +149,11 @@ def ask_zoom():
         if raw in ("3", "4", "5"):
             return int(raw)
 
-        print(f"  Valeur invalide. Entrez 3, 4 ou 5 (ou Entree pour {DEFAULT_ZOOM}).")
+        print(f"  Invalid value. Enter 3, 4 or 5 (or Enter for {DEFAULT_ZOOM}).")
 
 
 # ==============================================================================
-#  METHODE A -- STREET VIEW OFFICIEL : assemblage de tiles
+#  METHOD A -- OFFICIAL STREET VIEW: tile stitching
 # ==============================================================================
 
 def _download_tile(session, pano_id, zoom, x, y):
@@ -172,7 +172,7 @@ def _download_tile(session, pano_id, zoom, x, y):
             except requests.exceptions.Timeout:
                 last_err = "timeout"
             except requests.exceptions.ConnectionError:
-                last_err = "connexion refusee"
+                last_err = "connection refused"
             except Exception as e:
                 last_err = str(e)
             if attempt <= RETRIES:
@@ -188,7 +188,7 @@ def _progress_bar(done, total, width=35):
 
 def download_streetview_tiles(session, pano_id, zoom):
     if zoom not in GRID:
-        print(f"[ERREUR] zoom={zoom} invalide.")
+        print(f"[ERROR] zoom={zoom} invalid.")
         return None
 
     cols, rows = GRID[zoom]
@@ -196,12 +196,12 @@ def download_streetview_tiles(session, pano_id, zoom):
     workers    = max(1, MAX_WORKERS)
 
     print()
-    print(f"  Methode     : tiles Street View officiel")
+    print(f"  Method      : official Street View tiles")
     print(f"  Zoom        : {zoom}  ->  {cols * TILE_SIZE} x {rows * TILE_SIZE} px")
     print(f"  Total tiles : {total}  ({cols}x{rows})")
-    print(f"  Parallelisme: {workers} workers")
+    print(f"  Parallelism : {workers} workers")
     if zoom == 5:
-        print(f"  Attention   : certaines tuiles peuvent etre indisponibles (zones noires)")
+        print(f"  Careful     : some tiles may be unavailable (black areas)")
     print()
 
     tiles_subdir = os.path.join(TILES_DIR, pano_id)
@@ -239,17 +239,17 @@ def download_streetview_tiles(session, pano_id, zoom):
                 print(f"  [{status}] tile ({x:02d},{y:02d})  {_progress_bar(done, total)}{suffix}", flush=True)
 
     print()
-    print(f"  Bilan : {ok_count}/{total} OK  |  {fail_count} echecs")
+    print(f"  Summary : {ok_count}/{total} OK  |  {fail_count} failed")
 
     if ok_count == 0:
-        print("[ERREUR] Aucune tile recue. Verifiez le panoID.")
+        print("[ERROR] No tile received. Check the panoID.")
         return None
 
     if fail_count > 0:
-        print(f"  {fail_count} tuile(s) manquante(s) -> zones noires dans l'image finale")
+        print(f"  {fail_count} missing tile(s) -> black areas in the final image")
 
     print()
-    print("  Assemblage...")
+    print("  Stitching...")
     panorama = Image.new("RGB", (cols * TILE_SIZE, rows * TILE_SIZE), (0, 0, 0))
     for (x, y), img in tiles_dict.items():
         panorama.paste(img, (x * TILE_SIZE, y * TILE_SIZE))
@@ -257,26 +257,26 @@ def download_streetview_tiles(session, pano_id, zoom):
 
 
 # ==============================================================================
-#  METHODE B -- PHOTO SPHERE UTILISATEUR : telechargement direct CDN
+#  METHOD B -- USER PHOTO SPHERE: direct CDN download
 # ==============================================================================
 
 def download_photo_sphere(session, photo_url, width, height):
     if not photo_url:
-        print("[ERREUR] URL CDN introuvable dans le lien Google Maps.")
-        print("  Copiez l'URL directement depuis la barre d'adresse Street View.")
+        print("[ERROR] CDN URL not found in the Google Maps link.")
+        print("  Copy the URL straight from the Street View address bar.")
         return None
 
     if not width or not height:
         width, height = 8192, 4096
-        print(f"  Dimensions non detectees, fallback : {width}x{height}")
+        print(f"  Dimensions not detected, fallback: {width}x{height}")
 
     cdn_url = f"{photo_url}=w{width}-h{height}-k-no"
 
-    print(f"  Methode  : photo sphere utilisateur (CDN direct)")
-    print(f"  Taille   : {width} x {height} px")
-    print(f"  URL CDN  : {cdn_url[:80]}...")
+    print(f"  Method   : user photo sphere (direct CDN)")
+    print(f"  Size     : {width} x {height} px")
+    print(f"  CDN URL  : {cdn_url[:80]}...")
     print()
-    print("  Telechargement en cours...", flush=True)
+    print("  Downloading...", flush=True)
 
     for attempt in range(1, RETRIES + 2):
         try:
@@ -291,11 +291,11 @@ def download_photo_sphere(session, photo_url, width, height):
                 downloaded += len(chunk)
                 if total_size:
                     pct = downloaded / total_size * 100
-                    print(f"\r  Recu : {downloaded/1024/1024:.1f} Mo / {total_size/1024/1024:.1f} Mo  ({pct:.0f}%)", end="", flush=True)
+                    print(f"\r  Received : {downloaded/1024/1024:.1f} MB / {total_size/1024/1024:.1f} MB  ({pct:.0f}%)", end="", flush=True)
 
             print()
             img = Image.open(BytesIO(content)).convert("RGB")
-            print(f"  [OK] Image recue : {img.width}x{img.height} px")
+            print(f"  [OK] Image received : {img.width}x{img.height} px")
             return img
 
         except requests.exceptions.Timeout:
@@ -305,32 +305,32 @@ def download_photo_sphere(session, photo_url, width, height):
         except Exception as e:
             err = str(e)
 
-        print(f"\n  [Tentative {attempt}] Echec : {err}")
+        print(f"\n  [Attempt {attempt}] Failed : {err}")
         if attempt <= RETRIES:
             time.sleep(2)
 
-    print(f"[ERREUR] Impossible de telecharger la photo sphere : {err}")
+    print(f"[ERROR] Could not download the photo sphere : {err}")
     return None
 
 
 # ==============================================================================
-#  REDRESSEMENT (DE-TILT) DE L'HORIZON
+#  HORIZON LEVELLING (DE-TILT)
 # ==============================================================================
 #
-#  Les photo spheres tierces (trail-cam, casque, velo...) sont souvent uploadees
-#  INCLINEES. Google stocke la pose (heading/pitch/roll) et redresse l'horizon
-#  a l'affichage -- mais le JPEG servi par le CDN, lui, reste penche. D'ou l'effet
-#  "sourire/fronce" : horizon qui plonge au centre et remonte sur les bords.
+#  Third-party photo spheres (trail cams, helmets, bikes...) are often uploaded
+#  TILTED. Google stores the pose (heading/pitch/roll) and levels the horizon
+#  on display -- but the JPEG served by the CDN stays tilted. Hence the
+#  "smile/frown" effect: horizon dipping in the middle, rising at the edges.
 #
-#  Ici on : 1) recupere la pose via l'endpoint photometa de Google
-#           2) si le tilt n'est pas proche de 0, on applique une rotation 3D
-#              de la sphere equirectangulaire pour remettre l'horizon a plat.
-#  Seuls pitch + roll comptent pour le redressement (le heading ne fait que
-#  tourner la vue horizontalement, il ne courbe pas l'horizon).
+#  Here we: 1) fetch the pose from Google's photometa endpoint
+#           2) if the tilt is not close to 0, apply a 3D rotation of the
+#              equirectangular sphere to bring the horizon back to flat.
+#  Only pitch + roll matter for levelling (heading merely turns the view
+#  horizontally, it does not bend the horizon).
 
 
 def _pose_matrix(heading_deg, pitch_deg, roll_deg):
-    """Matrice de rotation camera->monde. Repere : X droite, Y haut, Z avant."""
+    """Camera->world rotation matrix. Frame: X right, Y up, Z forward."""
     h = math.radians(heading_deg); p = math.radians(pitch_deg); r = math.radians(roll_deg)
     ch, sh = math.cos(h), math.sin(h)
     cp, sp = math.cos(p), math.sin(p)
@@ -342,15 +342,15 @@ def _pose_matrix(heading_deg, pitch_deg, roll_deg):
 
 
 def relevel_equirect(img, pitch_deg, roll_deg, heading_deg=0.0, block=384):
-    """Redresse une image equirectangulaire 2:1 en annulant pitch/roll.
+    """Levels a 2:1 equirectangular image by cancelling pitch/roll.
 
-    Remap inverse vectorise (numpy), echantillonnage bilineaire avec
-    enroulement horizontal. Traitement par blocs de lignes pour rester
-    leger en memoire meme en 7680x3840.
+    Vectorised inverse remap (numpy), bilinear sampling with horizontal
+    wrap-around. Processed in blocks of rows to stay light on memory
+    even at 7680x3840.
     """
     src = np.asarray(img.convert("RGB"))            # H,W,3 uint8
     H, W = src.shape[:2]
-    Rt = _pose_matrix(heading_deg, pitch_deg, roll_deg).T   # monde->camera
+    Rt = _pose_matrix(heading_deg, pitch_deg, roll_deg).T   # world->camera
     out = np.empty((H, W, 3), dtype=np.uint8)
 
     cols = (np.arange(W, dtype=np.float64) + 0.5) / W
@@ -390,9 +390,9 @@ def relevel_equirect(img, pitch_deg, roll_deg, heading_deg=0.0, block=384):
     return Image.fromarray(out, "RGB")
 
 
-# Requete photometa. Le token !1e{idt} = type d'ID :
-#   1e2  -> Street View officiel    1e10 -> photo sphere / 360 tiers
-# On essaie les deux : le bon renvoie ~350 ko, le mauvais ~74 octets (vide).
+# photometa request. The !1e{idt} token = ID type:
+#   1e2  -> official Street View    1e10 -> third-party photo sphere / 360
+# We try both: the right one returns ~350 kB, the wrong one ~74 bytes (empty).
 _PHOTOMETA_PB = (
     "!1m4!1smaps_sv.tactile!11m2!2m1!1b1!2m2!1sen!2sus"
     "!3m3!1m2!1e{idt}!2s{pano}!4m57!1e1!1e2!1e3!1e4!1e5!1e6!1e8!1e12"
@@ -404,35 +404,35 @@ _PHOTOMETA_PB = (
 
 
 def fetch_pano_pose(session, pano_id):
-    """Recupere la pose (heading/pitch/roll en degres) via l'endpoint photometa.
+    """Fetches the pose (heading/pitch/roll in degrees) from the photometa endpoint.
 
-    NB : endpoint INTERNE Google, non documente. Le chemin d'indices peut
-    changer cote Google -> tout est best-effort + garde-fous. En cas d'echec
-    on renvoie None et l'utilisateur peut saisir le tilt a la main.
+    NB: INTERNAL, undocumented Google endpoint. The index path can change on
+    Google's side -> everything is best-effort plus guard rails. On failure we
+    return None and the user can type the tilt in by hand.
 
-    Le triple Google [1][0][5][0][1][2] = [heading, tilt, roll] en degres, ou
-    'tilt' suit la convention 90 = horizon (comme le 't' des URL Google Maps).
-    On en deduit pitch = tilt - 90 (deviation reelle) et roll ramene dans
-    [-180, 180].
+    Google's triple [1][0][5][0][1][2] = [heading, tilt, roll] in degrees, where
+    'tilt' follows the convention 90 = horizon (like the 't' in Google Maps URLs).
+    From it we derive pitch = tilt - 90 (the real deviation) and roll brought
+    back into [-180, 180].
     """
-    for idt in (10, 2):                           # 10 = tiers, 2 = SV officiel
+    for idt in (10, 2):                           # 10 = third-party, 2 = official SV
         pb = _PHOTOMETA_PB.format(idt=idt, pano=pano_id)
         try:
             r = session.get(PHOTOMETA_URL, params={"authuser": "0", "hl": "en",
                                                    "gl": "us", "pb": pb}, timeout=TIMEOUT)
             r.raise_for_status()
             txt = r.text
-            data = json.loads(txt[txt.find("["):])    # retire le prefixe ")]}'\"
+            data = json.loads(txt[txt.find("["):])    # strip the ")]}'" prefix
             node = data[1][0][5][0][1][2]
             heading, tilt, roll_raw = float(node[0]), float(node[1]), float(node[2])
         except Exception:
-            continue                                   # reponse vide / format -> on tente l'autre
+            continue                                   # empty reply / bad format -> try the other
 
         pitch = tilt - 90.0
         roll  = ((roll_raw + 180.0) % 360.0) - 180.0
 
-        # Garde-fou : un leveling reste modere. Sinon on a sans doute attrape
-        # le mauvais champ -> on refuse plutot que de tordre un pano correct.
+        # Guard rail: levelling stays moderate. Otherwise we probably grabbed
+        # the wrong field -> better to refuse than to twist a correct pano.
         if abs(pitch) <= 45.0 and abs(roll) <= 45.0:
             return {"heading": heading % 360.0, "pitch": pitch, "roll": roll}
 
@@ -440,37 +440,37 @@ def fetch_pano_pose(session, pano_id):
 
 
 def _ask_tilt(detected):
-    """Demande quoi faire. Renvoie (pitch, roll) a appliquer, ou None pour ignorer."""
+    """Asks what to do. Returns the (pitch, roll) to apply, or None to skip."""
     has_sugg = detected is not None
     sugg = (has_sugg and (abs(detected["pitch"]) >= TILT_THRESHOLD_DEG
                           or abs(detected["roll"]) >= TILT_THRESHOLD_DEG))
 
     print()
     if has_sugg:
-        print(f"  Pose Google : pitch={detected['pitch']:+.2f}  roll={detected['roll']:+.2f}"
+        print(f"  Google pose : pitch={detected['pitch']:+.2f}  roll={detected['roll']:+.2f}"
               f"  (heading={detected['heading']:.1f})")
         if not sugg:
-            print(f"  Tilt proche de 0 (<{TILT_THRESHOLD_DEG} deg) -> aucun redressement necessaire.")
+            print(f"  Tilt close to 0 (<{TILT_THRESHOLD_DEG} deg) -> no levelling needed.")
     else:
-        print("  Pose non recuperee depuis Google (metadonnees indisponibles).")
+        print("  Pose not retrieved from Google (metadata unavailable).")
 
     if sugg:
-        hint = "[Entree]=redresser (inverse de la pose), n=ignorer, ou 'pitch roll' manuel"
+        hint = "[Enter]=level (inverse of the pose), n=skip, or manual 'pitch roll'"
         default_apply = (-detected["pitch"], -detected["roll"])   # correction = inverse pose
     else:
-        hint = "[Entree]=ignorer, ou tape 'pitch roll' manuel (ex: 2.5 -1)"
+        hint = "[Enter]=skip, or type a manual 'pitch roll' (e.g. 2.5 -1)"
         default_apply = None
 
     while True:
-        ans = input(f"  Redresser l'horizon ? {hint} > ").strip().lower()
+        ans = input(f"  Level the horizon? {hint} > ").strip().lower()
         if ans == "":
             return default_apply
-        if ans in ("n", "non", "no"):
+        if ans in ("n", "no", "non"):
             return None
-        if ans in ("o", "oui", "y", "yes"):
+        if ans in ("y", "yes", "o", "oui"):
             if has_sugg:
                 return (-detected["pitch"], -detected["roll"])
-            print("  Aucune valeur detectee a appliquer -- entre deux nombres 'pitch roll'.")
+            print("  No detected value to apply -- type two numbers 'pitch roll'.")
             continue
         parts = ans.replace(",", " ").split()
         try:
@@ -480,46 +480,46 @@ def _ask_tilt(detected):
                 return (float(parts[0]), float(parts[1]))
         except ValueError:
             pass
-        print("  Reponse invalide. Entree, 'n', ou deux nombres 'pitch roll'.")
+        print("  Invalid answer. Enter, 'n', or two numbers 'pitch roll'.")
 
 
 def maybe_relevel(session, pano_id, panorama, output):
-    """Propose et applique le redressement. Non destructif : ecrit un fichier
-    '_leveled.jpg' a cote de l'original (qui n'est jamais modifie)."""
+    """Offers and applies levelling. Non-destructive: writes a '_leveled.jpg'
+    file next to the original (which is never modified)."""
     detected = fetch_pano_pose(session, pano_id)
     choice = _ask_tilt(detected)
     if choice is None:
         return
     pitch, roll = choice
 
-    print(f"  Redressement : pitch={pitch:+.2f}  roll={roll:+.2f} ...", flush=True)
+    print(f"  Levelling : pitch={pitch:+.2f}  roll={roll:+.2f} ...", flush=True)
     leveled = relevel_equirect(panorama, pitch, roll)
     leveled_path = re.sub(r"\.jpg$", "_leveled.jpg", output)
     leveled.save(leveled_path, "JPEG", quality=JPEG_QUALITY)
-    print(f"  [OK] Horizon redresse -> {leveled_path}")
-    print("       (l'original non corrige est conserve)")
-    print("       Si la courbe s'inverse au lieu de se corriger, relance en")
-    print("       negativant les valeurs (ex : -2.5 1 au lieu de 2.5 -1).")
+    print(f"  [OK] Horizon levelled -> {leveled_path}")
+    print("       (the uncorrected original is kept)")
+    print("       If the curve flips instead of being corrected, run it again")
+    print("       with negated values (e.g. -2.5 1 instead of 2.5 -1).")
 
 
 # ==============================================================================
-#  PROGRAMME PRINCIPAL
+#  MAIN PROGRAM
 # ==============================================================================
 
 PANO_TYPE_LABELS = {
-    0:  "Street View officiel",
-    1:  "Photo utilisateur (Google Maps)",
+    0:  "Official Street View",
+    1:  "User photo (Google Maps)",
     2:  "Trusted contributor",
-    10: "Photo sphere / 360 tiers",
+    10: "Third-party photo sphere / 360",
 }
 
 def process_url(session, raw):
-    """Traite une URL/panoID : telechargement, sauvegarde, redressement.
-    Utilise par la boucle interactive et par le mode combine (both.py)."""
-    # -- Extraction du panoID
+    """Handles one URL/panoID: download, save, levelling.
+    Used by the interactive loop and by the combined mode (both.py)."""
+    # -- panoID extraction
     pano_id = extract_pano_id(raw)
     if not pano_id:
-        print("  [ERREUR] Impossible d'extraire un panoID. Verifiez l'URL.")
+        print("  [ERROR] Could not extract a panoID. Check the URL.")
         return
 
     meta = parse_url_metadata(raw) if raw.startswith("http") else {
@@ -527,25 +527,25 @@ def process_url(session, raw):
     }
 
     pano_type  = meta["pano_type"]
-    type_label = PANO_TYPE_LABELS.get(pano_type, f"Type inconnu ({pano_type})")
+    type_label = PANO_TYPE_LABELS.get(pano_type, f"Unknown type ({pano_type})")
 
     print()
     print("=" * 62)
     print(f"  PanoID   : {pano_id}")
     print(f"  Type     : {type_label}")
     if meta["width"] and meta["height"]:
-        print(f"  Res. max : {meta['width']} x {meta['height']} px")
+        print(f"  Max res. : {meta['width']} x {meta['height']} px")
     print("=" * 62)
 
-    # -- Choix du zoom
+    # -- Zoom selection
     if pano_type == 0:
         zoom = ask_zoom()
     else:
         zoom = DEFAULT_ZOOM
         print()
-        print("  (Photo sphere : zoom sans effet, resolution d'origine utilisee)")
+        print("  (Photo sphere: zoom has no effect, original resolution used)")
 
-    # -- Telechargement
+    # -- Download
     if pano_type == 0:
         panorama = download_streetview_tiles(session, pano_id, zoom)
         output   = os.path.join(OUT_DIR, f"panorama_{pano_id}_z{zoom}.jpg")
@@ -559,12 +559,12 @@ def process_url(session, raw):
         output = os.path.join(OUT_DIR, f"panorama_{pano_id}.jpg")
 
     if panorama is None:
-        print("  Echec du telechargement. Essayez une autre URL.")
+        print("  Download failed. Try another URL.")
         return
 
-    # -- Sauvegarde
+    # -- Save
     os.makedirs(OUT_DIR, exist_ok=True)
-    print(f"  Sauvegarde -> {output}")
+    print(f"  Saving -> {output}")
     panorama.save(output, "JPEG", quality=JPEG_QUALITY)
 
     w, h    = panorama.size
@@ -573,17 +573,17 @@ def process_url(session, raw):
 
     print()
     print("=" * 62)
-    print(f"  TERMINE  --  {output}")
+    print(f"  DONE  --  {output}")
     print(f"  Dimensions : {w} x {h} px")
-    print(f"  Ratio      : {ratio:.2f}:1  (cible 2.00:1)")
-    print(f"  Taille     : {size_mb:.1f} Mo")
+    print(f"  Ratio      : {ratio:.2f}:1  (target 2.00:1)")
+    print(f"  Size       : {size_mb:.1f} MB")
     print("=" * 62)
 
-    # -- Redressement optionnel de l'horizon (non destructif)
+    # -- Optional horizon levelling (non-destructive)
     maybe_relevel(session, pano_id, panorama, output)
 
     print()
-    print("  Utilisable comme carte spherique dans 3ds Max + V-Ray.")
+    print("  Ready to use as a spherical map in 3ds Max + V-Ray.")
 
 
 def main():
@@ -591,7 +591,7 @@ def main():
     print()
     print("=" * 62)
     print("  Street View Panorama Downloader")
-    print("  [Q + Entree] pour quitter")
+    print("  [Q + Enter] to quit")
     print("=" * 62)
 
     with requests.Session() as session:
@@ -603,9 +603,9 @@ def main():
 
         while True:
 
-            # -- Saisie URL
+            # -- URL input
             print()
-            print("  Nouvelle URL Google Maps ou panoID :")
+            print("  New Google Maps URL or panoID:")
             print()
             raw = input("  > ").strip()
 
@@ -614,7 +614,7 @@ def main():
 
             if raw.lower() == "q":
                 print()
-                print("  Au revoir.")
+                print("  Goodbye.")
                 print()
                 break
 
