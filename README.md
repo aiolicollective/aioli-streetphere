@@ -35,12 +35,26 @@ For the 3D module only: Node.js (https://nodejs.org) and Git
 
 ## Installation
 
+Two ways to get the files -- pick whichever you prefer.
+
+**A. Zip** (no Git needed)
+
 1. Download the project: https://github.com/aiolicollective/aioli-streetphere/archive/refs/heads/main.zip
 2. Unzip it wherever you like
 3. Open the unzipped folder
 4. Double-click setup.bat
 
-setup.bat does everything on its own:
+**B. Git clone** (easier to update later: `git pull` and you are current)
+
+```bat
+git clone https://github.com/aiolicollective/aioli-streetphere.git
+cd aioli-streetphere
+```
+
+Then double-click setup.bat in that folder. Git is required by the 3D module
+anyway, so if you plan to use it you already have what you need.
+
+Either way, setup.bat does everything on its own:
 - Finds Python on your machine
 - Creates an isolated virtual environment (venv) inside the folder
 - Installs the dependencies (requests and Pillow)
