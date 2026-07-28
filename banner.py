@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 """
-banner.py  --  aioli-streetphere : ecran d'introduction
-=======================================================
-Logo du collectif, liens, credits et avertissement d'usage,
-affiches une fois au lancement du programme.
+banner.py  --  aioli-streetphere: intro screen
+==============================================
+Collective logo, links, credits and usage disclaimer,
+shown once when the program starts.
 
-Aucune dependance : ce module doit fonctionner AVANT le venv
-(le module 3D tourne sur le Python systeme).
+No dependency: this module must work BEFORE the venv exists
+(the 3D module runs on the system Python).
 
-Utilisation :
-    import banner ; banner.show("streetphere")   # depuis un script
-    python banner.py streetphere                 # depuis un .bat
+Usage:
+    import banner ; banner.show("streetphere")   # from a script
+    python banner.py streetphere                 # from a .bat
 
-Le banner ne s'affiche qu'une fois par lancement : la variable
-d'environnement AIOLI_BANNER est posee, les sous-processus la voient
-et se taisent. `banner.show(force=True)` passe outre.
+The banner is shown only once per run: the AIOLI_BANNER environment
+variable is set, sub-processes see it and stay quiet.
+`banner.show(force=True)` overrides that.
 """
 
 import os
@@ -33,7 +33,7 @@ GUARD_ENV = "AIOLI_BANNER"
 #  LOGO
 # ==============================================================================
 
-# "> ai.oli/" -- logo v1 du collectif (prompt de terminal)
+# "> ai.oli/" -- v1 logo of the collective (a terminal prompt)
 LOGO_UNICODE = r"""
  ██╗       █████╗ ██╗    ██████╗ ██╗     ██╗    ██╗
  ╚██╗     ██╔══██╗██║   ██╔═══██╗██║     ██║   ██╔╝
@@ -43,7 +43,7 @@ LOGO_UNICODE = r"""
  ╚═╝      ╚═╝  ╚═╝╚═╝╚═╝ ╚═════╝ ╚══════╝╚═╝╚═╝
 """
 
-# Repli pour les consoles qui ne savent pas afficher l'UTF-8
+# Fallback for consoles that cannot display UTF-8
 LOGO_ASCII = r"""
  ##          ###    ####      #######  ##       ####       ##
   ##        ## ##    ##      ##     ## ##        ##       ##
@@ -56,7 +56,7 @@ LOGO_ASCII = r"""
 
 
 # ==============================================================================
-#  CAPACITES DU TERMINAL
+#  TERMINAL CAPABILITIES
 # ==============================================================================
 
 def _stdout_encoding():
@@ -64,9 +64,9 @@ def _stdout_encoding():
 
 
 def _use_utf8():
-    """Force l'UTF-8 sur stdout si possible, et dit si le logo passe."""
+    """Forces UTF-8 on stdout if possible, and tells whether the logo fits."""
     try:
-        # Python 3.7+ : on repasse stdout en UTF-8 (cmd.exe reste souvent en cp850)
+        # Python 3.7+: switch stdout back to UTF-8 (cmd.exe often stays on cp850)
         sys.stdout.reconfigure(encoding="utf-8")
     except Exception:
         pass
@@ -81,14 +81,14 @@ def _use_utf8():
 
 
 def _use_color():
-    """Couleurs ANSI : seulement en vrai terminal, et si non desactivees."""
+    """ANSI colours: only in a real terminal, and only if not disabled."""
     if os.environ.get("NO_COLOR"):
         return False
     if not sys.stdout.isatty():
         return False
     if os.name != "nt":
         return True
-    # Windows 10+ : activer le traitement des sequences VT sur la console
+    # Windows 10+: enable VT sequence processing on the console
     try:
         import ctypes
         k = ctypes.windll.kernel32
@@ -103,7 +103,7 @@ def _use_color():
 
 
 def _use_links():
-    """Liens cliquables (OSC 8) : Windows Terminal, iTerm, VS Code..."""
+    """Clickable links (OSC 8): Windows Terminal, iTerm, VS Code..."""
     if not sys.stdout.isatty():
         return False
     return bool(
@@ -114,7 +114,7 @@ def _use_links():
 
 
 # ==============================================================================
-#  RENDU
+#  RENDERING
 # ==============================================================================
 
 def _build(tool=None):
@@ -140,29 +140,29 @@ def _build(tool=None):
     L = [""]
     L += ["%s%s%s" % (C_LOGO, l, C_OFF) for l in logo.split("\n")]
     L += [""]
-    L += ["  %scollectif hybride artistes + agents IA %s Marseille%s" % (C_DIM, dot, C_OFF)]
+    L += ["  %shybrid collective of artists + AI agents %s Marseille%s" % (C_DIM, dot, C_OFF)]
     L += [""]
 
     title = tool or "streetphere"
-    L += ["  %s%s v%s%s  %spanoramas 360 equirectangulaires + environnements 3D a l'echelle%s"
+    L += ["  %s%s v%s%s  %s2:1 equirectangular 360 panoramas + true-to-scale 3D environments%s"
           % (C_ACC, title, VERSION, C_OFF, C_DIM, C_OFF)]
     L += [""]
     L += ["  %s site        %s" % (tee, link(SITE))]
     L += ["  %s instagram   %s" % (tee, link("instagram.com/aioli.collective", INSTAGRAM))]
     L += ["  %s github      %s" % (ell, link(REPO))]
     L += [""]
-    L += ["  %ssources   donnees Google Street View / Google Earth %s projet non affilie a Google%s"
+    L += ["  %ssources   Google Street View / Google Earth data %s project not affiliated with Google%s"
           % (C_DIM, dot, C_OFF)]
     L += ["  %s          earth3d : earth-reverse-engineering (retroplasma) %s three.js %s Pillow %s numpy%s"
           % (C_DIM, dot, dot, dot, C_OFF)]
-    L += ["  %susage     personnel / recherche, sans garantie %s details : LICENSE et CREDITS.md%s"
+    L += ["  %susage     personal / research, without warranty %s details: LICENSE and CREDITS.md%s"
           % (C_DIM, dot, C_OFF)]
     L += [""]
     return "\n".join(L)
 
 
 def show(tool=None, force=False):
-    """Affiche le banner, une seule fois par lancement."""
+    """Shows the banner, only once per run."""
     if not force and os.environ.get(GUARD_ENV):
         return
     os.environ[GUARD_ENV] = "1"
@@ -170,7 +170,7 @@ def show(tool=None, force=False):
         print(_build(tool))
         sys.stdout.flush()
     except Exception:
-        # Un banner ne doit jamais empecher le programme de tourner
+        # A banner must never keep the program from running
         print("\n  > ai.oli/  %s  %s\n" % (SITE, REPO))
 
 
