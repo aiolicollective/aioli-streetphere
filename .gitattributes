@@ -1,0 +1,9 @@
+# Les .bat doivent garder leurs fins de ligne CRLF (cmd.exe), y compris
+# dans le zip telecharge depuis GitHub : on les traite en binaire.
+*.bat -text
+
+# Le reste : normalisation git par defaut
+*.py text eol=lf
+*.md text eol=lf
+*.js text eol=lf
+*.html text eol=lf
