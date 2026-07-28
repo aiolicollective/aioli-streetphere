@@ -1,4 +1,4 @@
-# earth3d — Google Earth 3D → OBJ à l'échelle (v2.3)
+# earth3d — Google Earth 3D → OBJ à l'échelle
 
 Télécharge le mesh 3D texturé de l'environnement dans un **rayon en mètres**
 autour d'un point (données Google Earth) et le recentre à l'échelle métrique,
@@ -65,7 +65,7 @@ Rien ne s'installe hors du dossier du repo : Python = stdlib + Pillow du venv
 de `setup.bat`, dépendances Node locales à `earth3d_vendor/node_modules/`,
 rien en global.
 
-## Limites connues (v2.3)
+## Limites connues
 
 - Protocole non officiel : peut casser sans préavis côté Google.
 - Le téléchargement se fait par cellules entières puis la géométrie est
@@ -76,7 +76,17 @@ rien en global.
 - LOD : le détail max dépend de la couverture 3D de la ville.
 - Le sol est calé sur le point le plus bas du mesh (approximation).
 
-## Légal
+## Légal et crédits
 
-Données propriété de Google. Prévisualisation et usage interne uniquement,
-pas d'exploitation commerciale directe des assets extraits.
+Ce module n'est pas affilié à Google. Les mesh et textures téléchargés restent la
+propriété de Google et de ses fournisseurs de données : prévisualisation, étude et
+usage personnel ou de recherche uniquement, pas d'exploitation commerciale des
+assets extraits. Le protocole utilisé n'est pas officiel et son usage peut être
+contraire aux conditions d'utilisation des services Google — à chacun de vérifier
+ce que son cadre lui permet.
+
+Le cœur du module est le travail de reverse engineering de
+[retroplasma/earth-reverse-engineering](https://github.com/retroplasma/earth-reverse-engineering),
+cloné à l'exécution et jamais redistribué ici (son dépôt ne déclare aucune licence).
+
+Avertissement complet et liste des sources : [CREDITS.md](CREDITS.md).

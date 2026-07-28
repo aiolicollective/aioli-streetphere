@@ -1,5 +1,11 @@
 # aioli-streetphere
 
+> `> ai.oli/` — outil du [collectif ai.oli](https://aiolicollective.com), Marseille.
+> [Site](https://aiolicollective.com) · [Instagram](https://instagram.com/aioli.collective) · [GitHub](https://github.com/aiolicollective)
+>
+> Non affilie a Google. Usage personnel / recherche, sans garantie.
+> Voir [LICENSE](LICENSE) et [CREDITS.md](CREDITS.md).
+
 Telecharge un panorama Google Street View et l'exporte comme image equirectangulaire 2:1,
 prete a utiliser comme sphere d'environnement dans V-Ray, 3ds Max, Blender, Cinema 4D, etc.
 
@@ -91,8 +97,12 @@ utilisateur, la resolution est celle d'origine de la photo.
 
 ## Risques et limites
 
-- Usage personnel seulement : les images Street View sont propriete de Google.
-  Ne pas exploiter les resultats commercialement.
+- Usage personnel, pedagogique ou de recherche seulement : les images Street View
+  et les donnees Google Earth restent propriete de Google. Ne pas exploiter les
+  resultats commercialement. Details et avertissement complet : [CREDITS.md](CREDITS.md).
+- Le module 3D utilise un protocole non officiel : il peut cesser de fonctionner
+  sans preavis, et son usage peut etre contraire aux conditions d'utilisation de
+  Google. A chacun de verifier ce que son cadre lui permet.
 - Connexion Internet requise : le script accede aux serveurs Google.
 - Street View uniquement : les liens de cartes normales ou satellite ne fonctionnent pas.
 - Pas de cle API requise : cet outil utilise les memes CDNs que le navigateur.
@@ -186,6 +196,7 @@ proprement plutot que rendue de maniere deformee.
 
     .
     +-- streetview.py             Script principal (sphere 360)
+    +-- banner.py                 Ecran d'introduction (logo, liens, credits)
     +-- earth3d.py                Module 3D : mesh texture a l'echelle
     +-- earth3d_radius.js         Helper 3D : selection d'octants par rayon
     +-- requirements.txt          Librairies Python (requests, Pillow, numpy)
@@ -196,6 +207,8 @@ proprement plutot que rendue de maniere deformee.
     +-- both.py                   Mode combine : sphere + 3D depuis la meme URL
     +-- builder.html              Viewer 360° + exporteur HTML autonome (independant)
     +-- EARTH3D.md                Documentation du module 3D
+    +-- CREDITS.md                Sources, licences tierces, avertissement
+    +-- LICENSE                   MIT (notre code uniquement)
     +-- venv/                     Cree au 1er lancement, ne pas modifier
     +-- earth3d_vendor/           Exporter tiers, clone automatiquement (module 3D)
     +-- output/spheres/           Panoramas 2:1 (+ tiles/ intermediaires)
@@ -203,4 +216,17 @@ proprement plutot que rendue de maniere deformee.
 
 ---
 
-ai.claude pour aiolicollective - 2026
+## Credits
+
+Le module 3D repose sur le travail de reverse engineering de
+[retroplasma/earth-reverse-engineering](https://github.com/retroplasma/earth-reverse-engineering),
+clone a l'execution (jamais redistribue ici). Le viewer utilise three.js.
+Liste complete des sources, licences et avertissement d'usage : [CREDITS.md](CREDITS.md).
+
+Notre code est sous licence MIT ([LICENSE](LICENSE)) — elle ne couvre ni les donnees
+Google telechargees, ni le code tiers, ni le nom et le logo du collectif.
+
+---
+
+Collectif [ai.oli](https://aiolicollective.com) — victor.oli avec ai.claude, 2026.
+On dit ce qui est genere et par qui.
