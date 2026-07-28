@@ -49,6 +49,11 @@ if not exist "%PYTHON_CMD%" (
 )
 
 :run
+:: Ecran d'introduction du collectif (une fois par lancement)
+if not defined AIOLI_BANNER (
+    "%PYTHON_CMD%" banner.py
+    set AIOLI_BANNER=1
+)
 "%PYTHON_CMD%" earth3d.py
 echo.
 pause

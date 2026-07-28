@@ -32,10 +32,9 @@ pause
 exit /b 1
 
 :menu
+if not defined AIOLI_BANNER call :intro
 echo.
-echo ============================================================
-echo   aioli-streetphere
-echo ============================================================
+echo   ------------------------------------------------------------
 echo.
 echo   [1] Sphere 360 equirectangulaire (streetview)
 echo   [2] Environnement 3D a l'echelle (earth3d)
@@ -73,3 +72,19 @@ if not exist venv\Scripts\python.exe (
 call venv\Scripts\activate.bat
 python both.py
 goto :menu
+
+:: ------------------------------------------------------------
+::  Ecran d'introduction : affiche une seule fois par lancement.
+::  AIOLI_BANNER est herite par les scripts Python, qui se taisent
+::  alors pour ne pas repeter le logo.
+:: ------------------------------------------------------------
+:intro
+cls
+"%PYTHON_CMD%" banner.py
+if errorlevel 1 (
+    echo.
+    echo   ^> ai.oli/   aiolicollective.com   github.com/aiolicollective
+    echo.
+)
+set AIOLI_BANNER=1
+goto :eof
