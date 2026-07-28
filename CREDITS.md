@@ -1,71 +1,67 @@
-# Credits, sources et avertissement
+# Credits, sources and disclaimer
 
-`aioli-streetphere` est developpe par le collectif [ai.oli](https://aiolicollective.com)
-(Marseille). Notre code est sous licence MIT : voir [LICENSE](LICENSE).
+`aioli-streetphere` is developed by the [ai.oli](https://aiolicollective.com)
+collective (Marseille, France). Our code is MIT licensed: see [LICENSE](LICENSE).
 
-Cet outil ne serait pas possible sans le travail ci-dessous. Rien de tout cela
-n'est redistribue dans ce depot : tout est telecharge a l'execution, depuis la
-source d'origine.
-
----
-
-## Avertissement
-
-**Ce projet n'est ni affilie a Google, ni approuve ou sponsorise par Google.**
-Google, Google Maps, Street View et Google Earth sont des marques de Google LLC.
-
-- Les images et les modeles 3D obtenus restent la **propriete de Google et de ses
-  fournisseurs de donnees**. Ce depot ne contient ni ne redistribue aucune donnee
-  Google.
-- L'outil s'adresse a un **usage personnel, pedagogique ou de recherche**
-  (etude de faisabilite, references de travail, previsualisation).
-  Il ne donne aucun droit d'exploitation commerciale des donnees recuperees.
-- Le module 3D repose sur un **protocole non documente et non officiel**. Il peut
-  cesser de fonctionner du jour au lendemain, et son usage peut etre contraire aux
-  conditions d'utilisation des services Google.
-- **C'est a chaque utilisateur de verifier ce que sa juridiction et les conditions
-  d'utilisation applicables lui permettent de faire.** Le logiciel est fourni sans
-  garantie (voir LICENSE) : les auteurs ne sauraient etre tenus responsables de
-  l'usage qui en est fait.
-
-Si vous avez besoin de donnees 3D geospatiales pour un usage commercial, la voie
-officielle et sous licence existe : l'API Google Photorealistic 3D Tiles
-(compte Google Cloud requis).
+This tool would not exist without the work listed below. None of it is
+redistributed in this repository: everything is downloaded at runtime, from its
+original source.
 
 ---
 
-## Code tiers
+## Disclaimer
 
-| Projet | Role | Licence | Comment |
+**This project is not affiliated with, endorsed or sponsored by Google.**
+Google, Google Maps, Street View and Google Earth are trademarks of Google LLC.
+
+- The imagery and 3D models obtained remain the **property of Google and its data
+  providers**. This repository neither contains nor redistributes any Google data.
+- The tool is meant for **personal, educational or research use**
+  (feasibility studies, working references, previsualisation).
+  It grants no right to exploit the retrieved data commercially.
+- The 3D module relies on an **undocumented, unofficial protocol**. It may stop
+  working overnight, and using it may be at odds with the terms of service of
+  Google's products.
+- **It is up to each user to check what their jurisdiction and the applicable
+  terms of service allow them to do.** The software is provided without warranty
+  (see LICENSE): the authors cannot be held liable for how it is used.
+
+If you need geospatial 3D data for commercial use, there is an official, licensed
+route: the Google Photorealistic 3D Tiles API (Google Cloud account required).
+
+---
+
+## Third-party code
+
+| Project | Role | License | How |
 |---|---|---|---|
-| [earth-reverse-engineering](https://github.com/retroplasma/earth-reverse-engineering) (retroplasma) | Reverse du protocole Google Earth et exporteur de mesh : c'est le coeur du module 3D | **Aucune licence declaree** par l'auteur (donc tous droits reserves) | Clone automatiquement dans `earth3d_vendor/` au premier lancement. Jamais copie ni redistribue ici. |
-| [three.js](https://threejs.org) | Rendu du viewer 360 (`builder.html`) | MIT | Charge depuis un CDN au premier lancement du viewer |
-| [requests](https://requests.readthedocs.io) | Requetes HTTP | Apache-2.0 | Installe par `setup.bat` dans le venv local |
-| [Pillow](https://python-pillow.org) | Assemblage des tuiles, conversion des textures | MIT-CMU / HPND | Installe par `setup.bat` dans le venv local |
-| [NumPy](https://numpy.org) | Reechantillonnage spherique (redressement d'horizon) | BSD-3-Clause | Installe par `setup.bat` dans le venv local |
+| [earth-reverse-engineering](https://github.com/retroplasma/earth-reverse-engineering) (retroplasma) | Reverse engineering of the Google Earth protocol and mesh exporter: the heart of the 3D module | **No license declared** by the author (therefore all rights reserved) | Cloned automatically into `earth3d_vendor/` on first run. Never copied nor redistributed here. |
+| [three.js](https://threejs.org) | Rendering of the 360 viewer (`builder.html`) | MIT | Loaded from a CDN on the viewer's first run |
+| [requests](https://requests.readthedocs.io) | HTTP requests | Apache-2.0 | Installed by `setup.bat` into the local venv |
+| [Pillow](https://python-pillow.org) | Tile stitching, texture conversion | MIT-CMU / HPND | Installed by `setup.bat` into the local venv |
+| [NumPy](https://numpy.org) | Spherical resampling (horizon levelling) | BSD-3-Clause | Installed by `setup.bat` into the local venv |
 
-Mention particuliere a **retroplasma** : sans son travail de reverse, le module 3D
-n'existerait pas. Comme son depot ne declare pas de licence, nous ne le
-redistribuons pas et nous n'en derivons pas de code — nous le clonons a
-l'execution et nous l'appelons tel quel. Si vous reutilisez notre code, gardez
-ce fonctionnement.
+Special thanks to **retroplasma**: without that reverse engineering work, the 3D
+module would not exist. Since that repository declares no license, we do not
+redistribute it and we derive no code from it — we clone it at runtime and call
+it as-is. If you reuse our code, keep it that way.
 
-## Sources de donnees
+## Data sources
 
-| Source | Usage |
+| Source | Use |
 |---|---|
-| Google Street View (`cbk0.google.com`, `lh3.googleusercontent.com`, endpoint `photometa`) | Tuiles de panorama et pose (heading / pitch / roll) |
-| Google Earth (`kh.google.com/rt/...`) | Mesh 3D et textures, via le protocole non officiel ci-dessus |
+| Google Street View (`cbk0.google.com`, `lh3.googleusercontent.com`, `photometa` endpoint) | Panorama tiles and pose (heading / pitch / roll) |
+| Google Earth (`kh.google.com/rt/...`) | 3D mesh and textures, through the unofficial protocol above |
 
-Aucune cle API, aucun compte, aucun contournement de paiement : l'outil utilise
-les memes points d'acces publics que le navigateur lorsqu'on consulte Google Maps.
+No API key, no account, no payment bypass: the tool uses the same public
+endpoints as the browser does when you visit Google Maps.
 
 ---
 
-## Le collectif
+## The collective
 
-- Site : [aiolicollective.com](https://aiolicollective.com)
-- Instagram : [@aioli.collective](https://instagram.com/aioli.collective)
-- GitHub : [github.com/aiolicollective](https://github.com/aiolicollective)
+- Website: [aiolicollective.com](https://aiolicollective.com)
+- Instagram: [@aioli.collective](https://instagram.com/aioli.collective)
+- GitHub: [github.com/aiolicollective](https://github.com/aiolicollective)
 
-Outil developpe par victor.oli avec ai.claude. On dit ce qui est genere et par qui.
+Tool developed by victor.oli with ai.claude. We say what is generated and by whom.

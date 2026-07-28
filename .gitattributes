@@ -1,8 +1,8 @@
-# Les .bat doivent garder leurs fins de ligne CRLF (cmd.exe), y compris
-# dans le zip telecharge depuis GitHub : on les traite en binaire.
-*.bat -text
+# .bat files must reach Windows with CRLF line endings (cmd.exe), including in
+# the zip downloaded from GitHub: git converts them on checkout and on export.
+*.bat text eol=crlf
 
-# Le reste : normalisation git par defaut
+# The rest: default git normalisation
 *.py text eol=lf
 *.md text eol=lf
 *.js text eol=lf

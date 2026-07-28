@@ -1,10 +1,10 @@
 @echo off
 :: ============================================================
-::  setup.bat  —  Installation de l'environnement virtuel
+::  setup.bat  --  Virtual environment installer
 ::
-::  Cherche Python automatiquement. Si introuvable, demande
-::  le chemin a l'utilisateur.
-::  Rien n'est modifie en dehors du dossier courant.
+::  Looks for Python automatically. If it cannot be found,
+::  asks the user for the path.
+::  Nothing is modified outside the current folder.
 :: ============================================================
 
 echo.
@@ -13,29 +13,29 @@ echo   Street View Panorama Downloader  ^|  Setup
 echo ============================================================
 echo.
 
-:: ── Si le venv existe deja, passer directement a pip ────────
+:: -- If the venv already exists, go straight to pip ----------
 if exist venv\Scripts\python.exe (
-    echo  [INFO] venv deja present, mise a jour des dependances...
+    echo  [INFO] venv already present, updating the dependencies...
     echo.
     goto :install_deps
 )
 
-:: ── Recherche automatique de Python ─────────────────────
+:: -- Automatic Python lookup -----------------------------
 set PYTHON_CMD=
 
-:: 1. Lanceur Windows (py)
+:: 1. Windows launcher (py)
 py --version >nul 2>&1
 if not errorlevel 1 ( set PYTHON_CMD=py& goto :found_python )
 
-:: 2. python dans le PATH
+:: 2. python in the PATH
 python --version >nul 2>&1
 if not errorlevel 1 ( set PYTHON_CMD=python& goto :found_python )
 
-:: 3. python3 dans le PATH
+:: 3. python3 in the PATH
 python3 --version >nul 2>&1
 if not errorlevel 1 ( set PYTHON_CMD=python3& goto :found_python )
 
-:: 4. Chemins courants
+:: 4. Common paths
 for %%P in (
     "D:\Python\Python312\python.exe"
     "D:\Python\Python310\python.exe"
@@ -47,76 +47,76 @@ for %%P in (
     if exist %%P ( set PYTHON_CMD=%%P & goto :found_python )
 )
 
-:: ── Python non trouve : demander le chemin ───────────────────
-echo  [!] Python introuvable automatiquement.
+:: -- Python not found: ask for the path -----------------------
+echo  [!] Python could not be found automatically.
 echo.
-echo  Entrez le chemin complet vers python.exe
-echo  Exemple : D:\Python\Python312\python.exe
+echo  Enter the full path to python.exe
+echo  Example: D:\Python\Python312\python.exe
 echo.
-set /p PYTHON_CMD="  Chemin > "
+set /p PYTHON_CMD="  Path > "
 
-:: Verifier que le chemin entre est valide
+:: Check that the given path is valid
 if not exist "%PYTHON_CMD%" (
     echo.
-    echo  [ERREUR] Fichier introuvable : %PYTHON_CMD%
-    echo  Verifiez le chemin et relancez setup.bat.
+    echo  [ERROR] File not found: %PYTHON_CMD%
+    echo  Check the path and run setup.bat again.
     pause
     exit /b 1
 )
 
 :found_python
-:: ── Afficher la version trouvee ──────────────────────────
+:: -- Show the version found -------------------------------
 for /f "delims=" %%V in ('"%PYTHON_CMD%" --version 2^>^&1') do set PY_VERSION=%%V
-echo  [OK] Python detecte : %PYTHON_CMD%
-echo       Version        : %PY_VERSION%
+echo  [OK] Python detected : %PYTHON_CMD%
+echo       Version         : %PY_VERSION%
 echo.
-echo  *** Notez ce chemin pour vos autres machines : ***
+echo  *** Note this path down for your other machines: ***
 echo  *** %PYTHON_CMD% ***
 echo.
 
-:: ── Creer le venv ────────────────────────────────────
-echo  [1/3] Creation du venv dans .\venv\ ...
+:: -- Create the venv ----------------------------------
+echo  [1/3] Creating the venv in .\venv\ ...
 "%PYTHON_CMD%" -m venv venv
 if errorlevel 1 (
-    echo  [ERREUR] Impossible de creer le venv.
+    echo  [ERROR] Could not create the venv.
     pause
     exit /b 1
 )
-echo  [OK] venv cree.
+echo  [OK] venv created.
 echo.
 
-:: ── Installer les dependances ────────────────────────────
+:: -- Install the dependencies -----------------------------
 :install_deps
-echo  [2/3] Installation de requests + Pillow...
+echo  [2/3] Installing requests + Pillow...
 call venv\Scripts\activate.bat
 python -m pip install --upgrade pip --quiet
 pip install -r requirements.txt
 if errorlevel 1 (
-    echo  [ERREUR] Echec pip. Verifiez votre connexion Internet.
+    echo  [ERROR] pip failed. Check your Internet connection.
     pause
     exit /b 1
 )
-echo  [OK] Dependances installees.
+echo  [OK] Dependencies installed.
 echo.
 
-:: ── Modules optionnels ────────────────────────────────
-echo  [i] Module 3D (streetphere.bat choix 2) : Node.js + Git requis
-node --version >nul 2>&1 && ( echo      Node.js : OK ) || ( echo      Node.js : absent -- https://nodejs.org )
-git --version >nul 2>&1 && ( echo      Git     : OK ) || ( echo      Git     : absent -- https://git-scm.com )
+:: -- Optional modules ----------------------------------
+echo  [i] 3D module (streetphere.bat option 2): Node.js + Git required
+node --version >nul 2>&1 && ( echo      Node.js : OK ) || ( echo      Node.js : missing -- https://nodejs.org )
+git --version >nul 2>&1 && ( echo      Git     : OK ) || ( echo      Git     : missing -- https://git-scm.com )
 echo.
 
-:: ── Fin ────────────────────────────────────────────
-echo  [3/3] Installation terminee.
+:: -- Done -------------------------------------------
+echo  [3/3] Installation complete.
 echo.
-echo  Pour utiliser l'outil : double-cliquez sur streetphere.bat
-echo    [1] Sphere 360   [2] Environnement 3D   [3] Les deux
+echo  To use the tool: double-click streetphere.bat
+echo    [1] 360 sphere   [2] 3D environment   [3] Both
 echo.
 set LAUNCH=
-set /p LAUNCH="  Lancer le menu maintenant ? [Entree = oui / n] > "
-if /i "%LAUNCH%"=="n" goto :fin
+set /p LAUNCH="  Open the menu now? [Enter = yes / n] > "
+if /i "%LAUNCH%"=="n" goto :end
 call streetphere.bat
 exit /b 0
 
-:fin
+:end
 echo.
 pause

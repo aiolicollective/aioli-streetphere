@@ -21,25 +21,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 -------------------------------------------------------------------------------
-Portee de cette licence  /  Scope of this license
+Scope of this license
 
-Elle couvre UNIQUEMENT le code ecrit par le collectif ai.oli et publie dans ce
-depot (streetview.py, earth3d.py, earth3d_radius.js, both.py, banner.py,
-builder.html, les .bat et la documentation).
+It covers ONLY the code written by the ai.oli collective and published in this
+repository (streetview.py, earth3d.py, earth3d_radius.js, both.py, banner.py,
+builder.html, the .bat files and the documentation).
 
-Elle ne couvre pas, et ne peut pas couvrir :
+It does not cover, and cannot cover:
 
-- Les donnees telechargees a l'execution (imagerie Google Street View, mesh et
-  textures Google Earth). Elles restent la propriete de Google et de ses
-  fournisseurs. Ce depot n'en redistribue aucune.
-- Le code tiers telecharge a l'execution (voir CREDITS.md), qui reste soumis a
-  ses propres conditions. Ce depot n'en redistribue aucun.
-- Le nom, le logo et l'identite visuelle "ai.oli" / "aioli-streetphere", qui ne
-  font l'objet d'aucune cession ici.
-
-This license covers only the code authored by the ai.oli collective and
-published in this repository. It grants no rights over data fetched at runtime
-(Google Street View / Google Earth imagery, which remains the property of
-Google and its suppliers), over third-party code fetched at runtime (see
-CREDITS.md, governed by its own terms), or over the "ai.oli" name and marks.
-None of the above is redistributed by this repository.
+- The data fetched at runtime (Google Street View imagery, Google Earth meshes
+  and textures). It remains the property of Google and its suppliers. This
+  repository redistributes none of it.
+- The third-party code fetched at runtime (see CREDITS.md), which remains
+  governed by its own terms. This repository redistributes none of it.
+- The "ai.oli" / "aioli-streetphere" name, logo and visual identity, over which
+  no rights are granted here.

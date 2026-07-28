@@ -1,11 +1,11 @@
-# environnement
+# environment
 venv/
 __pycache__/
 
-# sorties (spheres + 3D)
+# outputs (spheres + 3D)
 output/
 
-# anciens emplacements de sorties
+# former output locations
 tiles/
 panorama_*.jpg
 earth3d_out/
