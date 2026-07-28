@@ -99,13 +99,13 @@ if errorlevel 1 (
 echo  [OK] Dependances installees.
 echo.
 
-:: ── Modules optionnels ────────────────────────────
+:: ── Modules optionnels ────────────────────────────────
 echo  [i] Module 3D (streetphere.bat choix 2) : Node.js + Git requis
 node --version >nul 2>&1 && ( echo      Node.js : OK ) || ( echo      Node.js : absent -- https://nodejs.org )
 git --version >nul 2>&1 && ( echo      Git     : OK ) || ( echo      Git     : absent -- https://git-scm.com )
 echo.
 
-:: ── Fin ────────────────────────────────────────
+:: ── Fin ────────────────────────────────────────────
 echo  [3/3] Installation terminee.
 echo.
 echo  Pour utiliser l'outil : double-cliquez sur streetphere.bat
