@@ -15,7 +15,7 @@ Prerequis : Python 3, Node.js, Git dans le PATH.
 Aucune dependance pip (stdlib uniquement).
 
 Utilisation :
-    python earth3d.py        (ou earth3d.bat)
+    python earth3d.py
 
 Usage interne uniquement -- donnees propriete de Google.
 """
