@@ -13,6 +13,36 @@ echo   Street View Panorama Downloader  ^|  Setup
 echo ============================================================
 echo.
 
+:: -- 3D module requirements, checked FIRST --------------------
+::  Deliberately before pip: if pip fails, this script stops, and
+::  a check placed at the end would never be shown. Node.js being
+::  missing is not a reason to stop the install -- option [1]
+::  works without it -- so this only warns.
+echo  [i] The 3D module (menu options [2] and [3]) needs Node.js and Git.
+echo      The 360 sphere (option [1]) does NOT need them.
+echo.
+node --version >nul 2>&1
+if errorlevel 1 (
+    echo      [!!] Node.js  NOT FOUND  -  install it from https://nodejs.org
+    set MISSING_3D=1
+) else (
+    echo      [OK] Node.js
+)
+git --version >nul 2>&1
+if errorlevel 1 (
+    echo      [!!] Git      NOT FOUND  -  install it from https://git-scm.com
+    set MISSING_3D=1
+) else (
+    echo      [OK] Git
+)
+echo.
+if defined MISSING_3D (
+    echo      Install what is marked NOT FOUND, then close and reopen this
+    echo      window so the new programs are picked up. Setup continues now:
+    echo      the 360 sphere will work either way.
+    echo.
+)
+
 :: -- If the venv already exists, go straight to pip ----------
 if exist venv\Scripts\python.exe (
     echo  [INFO] venv already present, updating the dependencies...
@@ -87,27 +117,42 @@ echo.
 
 :: -- Install the dependencies -----------------------------
 :install_deps
-echo  [2/3] Installing requests + Pillow...
+echo  [2/3] Installing requests + Pillow + numpy...
 call venv\Scripts\activate.bat
+for /f "delims=" %%V in ('python --version 2^>^&1') do set VENV_PY=%%V
+echo       venv is using: %VENV_PY%
+echo.
 python -m pip install --upgrade pip --quiet
 pip install -r requirements.txt
 if errorlevel 1 (
-    echo  [ERROR] pip failed. Check your Internet connection.
+    echo.
+    echo  [ERROR] pip could not install the dependencies.
+    echo.
+    echo  Two usual causes:
+    echo    1. No Internet connection, or a proxy / firewall blocking pip.
+    echo    2. Your Python is too new: a library has no ready-made package yet
+    echo       and pip tried to compile it. The log above then mentions
+    echo       "building wheel" and a 46 MB Pillow .tar.gz.
+    echo.
+    echo  Fix for case 2 -- install Python 3.12 from
+    echo  https://www.python.org/downloads/ -- tick "Add Python to PATH" --
+    echo  then DELETE the venv folder sitting next to this script
+    echo  and run setup.bat again.
+    echo.
     pause
     exit /b 1
 )
 echo  [OK] Dependencies installed.
 echo.
 
-:: -- Optional modules ----------------------------------
-echo  [i] 3D module (streetphere.bat option 2): Node.js + Git required
-node --version >nul 2>&1 && ( echo      Node.js : OK ) || ( echo      Node.js : missing -- https://nodejs.org )
-git --version >nul 2>&1 && ( echo      Git     : OK ) || ( echo      Git     : missing -- https://git-scm.com )
-echo.
-
 :: -- Done -------------------------------------------
 echo  [3/3] Installation complete.
 echo.
+if defined MISSING_3D (
+    echo  Reminder: Node.js and/or Git are still missing, so the 3D menu
+    echo  options [2] and [3] will refuse to start. Option [1] is ready.
+    echo.
+)
 echo  To use the tool: double-click streetphere.bat
 echo    [1] 360 sphere   [2] 3D environment   [3] Both
 echo.

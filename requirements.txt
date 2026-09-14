@@ -1,3 +1,17 @@
-requests==2.31.0
-Pillow==10.3.0
+# Minimum versions, not exact pins.
+#
+# Why: an exact pin (Pillow==10.3.0) only exists as a prebuilt package for the
+# Python versions that were current when it was released. On a newer Python
+# (3.13, 3.14...) pip finds no prebuilt wheel, downloads the 46 MB source
+# archive and tries to compile Pillow locally -- which fails on a normal
+# Windows machine with no C compiler.
+#
+# With a minimum bound, pip simply picks the newest prebuilt wheel that matches
+# the Python actually installed: Pillow 10.4 on Python 3.8-3.12, Pillow 12.x on
+# Python 3.14. Nothing is ever compiled.
+#
+# Existing installs are untouched: a requirement that is already satisfied is
+# left alone (setup.bat does not pass --upgrade).
+requests>=2.31
+Pillow>=10.3
 numpy>=1.24
