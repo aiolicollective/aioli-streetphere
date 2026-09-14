@@ -21,15 +21,25 @@ see below and EARTH3D.md).
 
 ## Requirements
 
-Python 3.8+ must be installed on your machine.
+| What | Needed for | Where |
+|------|-----------|-------|
+| **Python 3.8+** | everything | https://www.python.org/downloads/ |
+| **Node.js** (LTS) | 3D module only — options [2] and [3] | https://nodejs.org |
+| **Git** | 3D module only — options [2] and [3] | https://git-scm.com |
 
 If you don't have Python:
 1. Go to https://www.python.org/downloads/
-2. Download the latest version (e.g. Python 3.12)
+2. Download **Python 3.12** (see the note below about very recent versions)
 3. Run the installer and tick "Add Python to PATH" (important!)
 
-For the 3D module only: Node.js (https://nodejs.org) and Git
-(https://git-scm.com) must also be in your PATH.
+**If you want the 3D module, install Node.js and Git *before* running
+setup.bat.** They are not optional extras for that mode — options [2] and [3]
+refuse to start without them. Option [1], the 360 sphere, needs neither.
+
+> **Note on very recent Python versions.** Python 3.12 is the safest choice.
+> A Python released very recently sometimes has no prebuilt package for Pillow
+> yet; pip then tries to compile it on your machine, which fails without a C
+> compiler. See [Troubleshooting](#troubleshooting) if you hit that.
 
 ---
 
@@ -55,10 +65,10 @@ Then double-click setup.bat in that folder. Git is required by the 3D module
 anyway, so if you plan to use it you already have what you need.
 
 Either way, setup.bat does everything on its own:
+- Checks for Node.js and Git straight away, and says so if either is missing
 - Finds Python on your machine
 - Creates an isolated virtual environment (venv) inside the folder
-- Installs the dependencies (requests and Pillow)
-- Checks for Node.js and Git (3D module)
+- Installs the dependencies (requests, Pillow, numpy)
 - Offers to open the menu (streetphere.bat)
 
 What is a virtual environment (venv)?
@@ -68,6 +78,43 @@ Delete it and everything is back to how it was.
 
 Two files to double-click, no more: **setup.bat** once to install,
 **streetphere.bat** afterwards to run everything.
+
+---
+
+## Troubleshooting
+
+### setup.bat: "Getting requirements to build wheel did not run successfully" (Pillow)
+
+The log mentions a `pillow-*.tar.gz` of around 46 MB and a `KeyError`.
+
+**Cause:** your Python is newer than the prebuilt Pillow packages available, so
+pip falls back to compiling Pillow from source — which needs a C compiler you
+almost certainly don't have.
+
+**Fix:** make sure you have the current version of this repo
+(`git pull`, or re-download the zip), delete the `venv` folder next to
+setup.bat, and run setup.bat again. The dependency list now lets pip pick a
+package built for your Python version.
+
+If it still fails, install **Python 3.12** from
+https://www.python.org/downloads/ (tick "Add Python to PATH"), delete `venv`
+once more, and run setup.bat again.
+
+### Option [2] or [3] shows `[!!] Node.js`
+
+Node.js is not installed, or not in your PATH. Install the LTS version from
+https://nodejs.org, then **close the window and start streetphere.bat again** —
+Windows only picks up a newly installed program in a new window. Same thing for
+`[!!] Git` with https://git-scm.com.
+
+Option [1] (360 sphere) does not need either of them and keeps working.
+
+### setup.bat cannot find Python
+
+It will ask you to type the full path to `python.exe`
+(e.g. `C:\Users\You\AppData\Local\Programs\Python\Python312\python.exe`).
+This usually means "Add Python to PATH" was not ticked when Python was
+installed — reinstalling with that box ticked is the cleaner fix.
 
 ---
 

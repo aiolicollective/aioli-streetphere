@@ -61,6 +61,18 @@ goto :menu
 
 :earth3d
 "%PYTHON_CMD%" earth3d.py
+if errorlevel 1 (
+    echo.
+    echo   If the check above shows [!!] Node.js or [!!] Git, that program is
+    echo   missing: install it, then CLOSE this window and start
+    echo   streetphere.bat again -- Windows only sees a newly installed
+    echo   program in a new window.
+    echo     Node.js : https://nodejs.org   -- take the LTS version
+    echo     Git     : https://git-scm.com
+    echo.
+    echo   Option [1], the 360 sphere, works without either of them.
+    echo.
+)
 goto :menu
 
 :both
