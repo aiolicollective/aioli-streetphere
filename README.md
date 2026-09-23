@@ -215,6 +215,7 @@ scale for Blender / 3ds Max.
 - Optional packing: a single material + a single PNG atlas (model_packed.obj),
   or a few atlases for large areas (suggested, one material each);
   in Max, tick 'Import as single mesh' to merge everything into one object
+- Optional .glb export of the packed model (lighter, faster in Blender / Unreal)
 - Output: output/3d/<coords>_r<radius>m/
 - Full documentation: EARTH3D.md
 
@@ -276,7 +277,7 @@ rejected cleanly rather than rendered distorted.
     +-- venv/                     Created on first run, do not edit
     +-- earth3d_vendor/           Third-party exporter, cloned automatically (3D module)
     +-- output/spheres/           2:1 panoramas (+ intermediate tiles/)
-    +-- output/3d/                3D environments (model_packed.obj + atlas)
+    +-- output/3d/                3D environments (model_packed.obj/.glb + atlas)
 
 ---
 
