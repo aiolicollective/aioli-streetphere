@@ -211,7 +211,9 @@ scale for Blender / 3ds Max.
 - Radius in metres respected (geometry cropped to the requested disc)
 - Exact metric scale and origin (1 unit = 1 m, ground at 0)
 - Textures converted to .png (3ds Max compatibility)
-- Optional packing: a single material + a single PNG atlas (model_packed.obj);
+- Radius up to 10 km, with a suggested level of detail for large areas
+- Optional packing: a single material + a single PNG atlas (model_packed.obj),
+  or a few atlases for large areas (suggested, one material each);
   in Max, tick 'Import as single mesh' to merge everything into one object
 - Output: output/3d/<coords>_r<radius>m/
 - Full documentation: EARTH3D.md
