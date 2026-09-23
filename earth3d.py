@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-earth3d.py  --  Google Earth 3D -> true-to-scale OBJ (v2.5.1, experimental)
+earth3d.py  --  Google Earth 3D -> true-to-scale OBJ (v2.6, experimental)
 ===========================================================================
 From a Google Maps URL (or lat,lng) and a radius in metres, downloads the
 textured 3D mesh of the surroundings (Google Earth data) and recentres it
@@ -113,6 +113,45 @@ def extract_lat_lng(text):
         return float(m.group(1)), float(m.group(2))
 
     return None
+
+
+# ==============================================================================
+#  NAMING (v2.6)
+# ==============================================================================
+
+NAME_MAX = 24          # max length of the optional name typed by the user
+
+
+def gps_token(lat, lng):
+    """29.577, 35.42 -> '29p5770N_35p4200E'. 4 decimals (~11 m), the sign
+    becomes N/S and E/W (standard notation, no minus sign), the decimal
+    point becomes 'p': letters, digits and '_' only, safe everywhere
+    (Windows, 3ds Max, Blender, Unreal, command lines)."""
+    def one(v, pos, neg):
+        return f"{abs(v):.4f}".replace(".", "p") + (pos if v >= 0 else neg)
+    return f"{one(lat, 'N', 'S')}_{one(lng, 'E', 'W')}"
+
+
+def clean_name(raw):
+    """Free text -> safe short name: accents removed, anything other than
+    letters/digits becomes '_', at most NAME_MAX characters."""
+    import unicodedata
+    t = unicodedata.normalize("NFKD", raw).encode("ascii", "ignore").decode()
+    t = re.sub(r"[^A-Za-z0-9]+", "_", t).strip("_")
+    return t[:NAME_MAX].strip("_")
+
+
+def ask_name():
+    print()
+    print("  Short name for this extraction, put in front of the file names")
+    print("  (e.g. wadirum). Letters and digits; the rest becomes '_'.")
+    raw = input("  Name [Enter = none, GPS only] : ").strip()
+    name = clean_name(raw)
+    if raw and not name:
+        print("  [i] Nothing usable in that name: GPS only.")
+    elif name and name != raw:
+        print(f"  [i] Name used: {name}")
+    return name
 
 
 # ==============================================================================
@@ -324,7 +363,8 @@ def _enu_basis(lat_deg, lng_deg):
 R_GOOGLE = 6371010.0   # radius of the Google Earth sphere (rocktree)
 
 
-def recenter_obj(obj_in, obj_out, lat, lng, radius=None):
+def recenter_obj(obj_in, obj_out, lat, lng, radius=None,
+                 mtl_name="model_local.mtl"):
     """Recentres model.obj on (lat,lng), ground at ~0, units = metres.
 
     Verified convention (Sydney test, 2026-07): the Google Earth globe is a
@@ -337,7 +377,7 @@ def recenter_obj(obj_in, obj_out, lat, lng, radius=None):
 
     Written in the standard Y-up OBJ convention (X=east, Y=altitude, Z=south):
     Blender and 3ds Max restore Z-up on import automatically.
-    References model_local.mtl (cleaned-up version for 3ds Max)."""
+    References mtl_name (cleaned-up version for 3ds Max)."""
     import array
 
     (ex, ey, ez), (nx, ny, nz), (ux, uy, uz) = _enu_basis(lat, lng)
@@ -457,7 +497,7 @@ def recenter_obj(obj_in, obj_out, lat, lng, radius=None):
                 else:
                     dropped_faces += 1
             elif line.startswith("mtllib"):
-                fout.write("mtllib model_local.mtl\n")
+                fout.write(f"mtllib {mtl_name}\n")
             else:
                 fout.write(line)
 
@@ -502,7 +542,7 @@ def convert_bmp_textures(out_dir):
         p = os.path.join(out_dir, f)
         Image.open(p).convert("RGB").save(p[:-4] + ".png")
         os.remove(p)
-    for mtl in ("model.mtl", "model_local.mtl"):
+    for mtl in [f for f in os.listdir(out_dir) if f.lower().endswith(".mtl")]:
         p = os.path.join(out_dir, mtl)
         if os.path.isfile(p):
             txt = open(p, encoding="utf-8").read()
@@ -603,7 +643,8 @@ def _ask_atlas_count(n_tex, total_px):
         print(f"  Invalid value (1-{ATLAS_MAX_N}).")
 
 
-def pack_obj(out_dir, obj_name="model_local.obj"):
+def pack_obj(out_dir, obj_name="model_local.obj", mtl_name="model_local.mtl",
+             prefix=None):
     """Merges the tiles into ONE object with as few materials as possible:
     the textures are packed into PNG atlas(es) and the UVs are remapped to
     each tile's slot. Small areas: 1 atlas, 1 material (as in v2.3).
@@ -614,8 +655,9 @@ def pack_obj(out_dir, obj_name="model_local.obj"):
     Textures are opened one at a time (only their size is read up front):
     RAM use stays at about one atlas, whatever the size of the area.
 
-    Produces: model_packed.obj + model_packed.mtl + atlas.png
-    (or atlas_01.png, atlas_02.png...). Requires Pillow.
+    Produces: <prefix>_packed.obj + .mtl + <prefix>_atlas.png
+    (or <prefix>_atlas_01.png...); without prefix: model_packed.obj and
+    atlas.png as before v2.6. Requires Pillow.
     The multi-texture files are kept. Returns the number of atlases
     (0 = packing not done)."""
     import array
@@ -626,7 +668,9 @@ def pack_obj(out_dir, obj_name="model_local.obj"):
         return 0
 
     obj_in  = os.path.join(out_dir, obj_name)
-    mtl_in  = os.path.join(out_dir, "model_local.mtl")
+    mtl_in  = os.path.join(out_dir, mtl_name)
+    packed  = f"{prefix or 'model'}_packed"
+    stem    = f"{prefix}_atlas" if prefix else "atlas"
     if not (os.path.isfile(obj_in) and os.path.isfile(mtl_in)):
         print("  [!] Missing files for packing.")
         return 0
@@ -678,8 +722,8 @@ def pack_obj(out_dir, obj_name="model_local.obj"):
     single = (len(groups) == 1)
 
     # ---- one atlas per group ---------------------------------------------
-    atlas_names = (["atlas"] if single else
-                   [f"atlas_{k + 1:02d}" for k in range(len(groups))])
+    atlas_names = ([stem] if single else
+                   [f"{stem}_{k + 1:02d}" for k in range(len(groups))])
     where = {}       # material -> (atlas index, x, y, w, h, W, H)
     for k, names in enumerate(groups):
         pos, atlas_w, atlas_h, scale = _atlas_plan(names, sizes, g)
@@ -711,7 +755,7 @@ def pack_obj(out_dir, obj_name="model_local.obj"):
         del atlas
 
     # ---- pass 2: rewrite the obj (remapped UVs) --------------------------
-    with open(os.path.join(out_dir, "model_packed.mtl"), "w",
+    with open(os.path.join(out_dir, packed + ".mtl"), "w",
               encoding="utf-8") as f:
         for name in atlas_names:
             f.write(f"newmtl {name}\nKa 1.000 1.000 1.000\nKd 1.000 1.000 1.000\n"
@@ -722,12 +766,12 @@ def pack_obj(out_dir, obj_name="model_local.obj"):
     vt_i = 0
     emitted = 0      # atlas of the last usemtl written
     with open(obj_in, "r", encoding="utf-8", errors="replace") as fin, \
-         open(os.path.join(out_dir, "model_packed.obj"), "w",
+         open(os.path.join(out_dir, packed + ".obj"), "w",
               encoding="utf-8") as fout:
         # We KEEP the tile groups (g): the 3ds Max OBJ importer breaks the
         # geometry on a single block of several million faces. Blender does
         # not split on g (one object); in Max, tick 'Import as single mesh'.
-        fout.write(f"mtllib model_packed.mtl\nusemtl {atlas_names[0]}\n")
+        fout.write(f"mtllib {packed}.mtl\nusemtl {atlas_names[0]}\n")
         for line in fin:
             if line.startswith("vt "):
                 p = line.split()
@@ -755,17 +799,18 @@ def pack_obj(out_dir, obj_name="model_local.obj"):
                 fout.write(line)
 
     if single:
-        print(f"  [OK] model_packed.obj : 1 material, atlas.png, tiles as groups.")
+        print(f"  [OK] {packed}.obj : 1 material, {stem}.png, tiles as groups.")
     else:
-        print(f"  [OK] model_packed.obj : {len(groups)} materials, "
-              f"atlas_01.png..atlas_{len(groups):02d}.png, tiles as groups.")
+        print(f"  [OK] {packed}.obj : {len(groups)} materials, "
+              f"{stem}_01.png..{stem}_{len(groups):02d}.png, tiles as groups.")
     print(f"       Blender: direct import (1 object). 3ds Max: tick")
     print(f"       'Import as single mesh' in the OBJ importer.")
     return len(groups)
 
 
-def write_glb(out_dir, obj_name="model_packed.obj", mtl_name="model_packed.mtl"):
-    """Writes model_packed.glb from the packed OBJ: same geometry, same
+def write_glb(out_dir, obj_name="model_packed.obj", mtl_name="model_packed.mtl",
+              glb_name="model_packed.glb"):
+    """Writes the .glb from the packed OBJ: same geometry, same
     axes (Y-up, metres), one primitive per atlas material. The atlases are
     REFERENCED, not embedded (they already sit next to it, no copy of
     several GB): keep the .glb in the same folder as its atlas_XX.png.
@@ -778,7 +823,7 @@ def write_glb(out_dir, obj_name="model_packed.obj", mtl_name="model_packed.mtl")
     obj_in = os.path.join(out_dir, obj_name)
     mtl_in = os.path.join(out_dir, mtl_name)
     if not (os.path.isfile(obj_in) and os.path.isfile(mtl_in)):
-        print("  [!] model_packed.obj/.mtl missing: .glb skipped.")
+        print(f"  [!] {obj_name} / {mtl_name} missing: .glb skipped.")
         return False
 
     mat_tex = {}
@@ -791,7 +836,7 @@ def write_glb(out_dir, obj_name="model_packed.obj", mtl_name="model_packed.mtl")
             elif t.startswith("map_Kd ") and cur:
                 mat_tex[cur] = t.split(None, 1)[1]
 
-    print("  [i] Writing model_packed.glb...")
+    print(f"  [i] Writing {glb_name}...")
     V = array.array("f"); T = array.array("f"); N = array.array("f")
     pos = array.array("f"); uv = array.array("f"); nor = array.array("f")
     prims = {}                 # material -> triangle indices
@@ -916,24 +961,25 @@ def write_glb(out_dir, obj_name="model_packed.obj", mtl_name="model_packed.mtl")
     if total >= 2 ** 32:
         print("  [!] Geometry too big for a .glb (4 GB limit): skipped.")
         return False
-    with open(os.path.join(out_dir, "model_packed.glb"), "wb") as f:
+    with open(os.path.join(out_dir, glb_name), "wb") as f:
         f.write(struct.pack("<III", 0x46546C67, 2, total))
         f.write(struct.pack("<II", len(js), 0x4E4F534A))
         f.write(js)
         f.write(struct.pack("<II", offset, 0x004E4942))
         for a in blobs:
             a.tofile(f)
-    print(f"  [OK] model_packed.glb : {nv} vertices, {len(materials)} material(s), "
+    print(f"  [OK] {glb_name} : {nv} vertices, {len(materials)} material(s), "
           f"{total / 1e6:.0f} MB (atlases referenced, keep them next to it).")
     return True
 
 
-def cleanup_intermediate(out_dir):
+def cleanup_intermediate(out_dir, obj_name="model_local.obj",
+                         mtl_name="model_local.mtl"):
     """After a successful packing, offers to delete the multi-texture
-    version (model_local.* + the tile textures). Default: keep, because
+    version (<prefix>_local.* + the tile textures). Default: keep, because
     repacking (another atlas count) needs it. Returns True if deleted."""
-    mtl = os.path.join(out_dir, "model_local.mtl")
-    files = [os.path.join(out_dir, "model_local.obj"), mtl]
+    mtl = os.path.join(out_dir, mtl_name)
+    files = [os.path.join(out_dir, obj_name), mtl]
     if os.path.isfile(mtl):
         with open(mtl, "r", encoding="utf-8", errors="replace") as f:
             for line in f:
@@ -945,7 +991,8 @@ def cleanup_intermediate(out_dir):
         return False
     size = sum(os.path.getsize(p) for p in files)
     print()
-    print(f"  Multi-texture version: model_local.* + {len(files) - 2} tile textures, "
+    print(f"  Multi-texture version: {os.path.splitext(obj_name)[0]}.* + "
+          f"{len(files) - 2} tile textures, "
           f"{size / 1e9:.1f} GB.")
     print("  Only needed to repack (other atlas count) without a new download.")
     ans = input("  Delete it? [y / Enter = keep] : ").strip().lower()
@@ -1021,6 +1068,7 @@ def process(raw):
         radius  = None
 
     detail = ask_detail(radius)
+    label  = ask_name()
 
     dump_dir = dump_octants(octants, detail)
     if not dump_dir:
@@ -1031,10 +1079,14 @@ def process(raw):
         print(f"  [ERROR] model.obj not found in {dump_dir}")
         return
 
-    # output folder
-    zone    = f"r{radius}m" if radius else f"lvl{lvl}"
-    name    = f"{lat:.5f}_{lng:.5f}_{zone}_d{detail}".replace("-", "m")
-    out_dir = os.path.join(OUT_DIR, name)
+    # output folder = file prefix (v2.6): [name_]29p5770N_35p4200E_r6000_d19
+    zone    = f"r{radius}" if radius else f"lvl{lvl}"
+    base    = f"{gps_token(lat, lng)}_{zone}_d{detail}"
+    if label:
+        base = f"{label}_{base}"
+    out_dir = os.path.join(OUT_DIR, base)
+    local   = f"{base}_local"
+    packed_name = f"{base}_packed"
     if os.path.isdir(out_dir):
         shutil.rmtree(out_dir)
     # moved, not copied: the dump is not kept twice on disk (v2.5.1)
@@ -1042,11 +1094,11 @@ def process(raw):
     shutil.move(dump_dir, out_dir)
 
     write_clean_mtl(os.path.join(out_dir, "model.mtl"),
-                    os.path.join(out_dir, "model_local.mtl"))
+                    os.path.join(out_dir, local + ".mtl"))
     convert_bmp_textures(out_dir)
     ok = recenter_obj(os.path.join(out_dir, "model.obj"),
-                      os.path.join(out_dir, "model_local.obj"),
-                      lat, lng, radius=radius)
+                      os.path.join(out_dir, local + ".obj"),
+                      lat, lng, radius=radius, mtl_name=local + ".mtl")
 
     if ok:
         # the raw geocentric model is only a debug copy once recentred
@@ -1062,41 +1114,43 @@ def process(raw):
         ans = input("  Pack into a single object + texture atlas(es)? "
                     "[Enter = yes / n] : ").strip().lower()
         if ans not in ("n", "no", "non"):
-            packed = pack_obj(out_dir)
+            packed = pack_obj(out_dir, local + ".obj", local + ".mtl", prefix=base)
     if packed:
         print()
         ans = input("  Also export a .glb (Blender / Unreal, faster to import)? "
                     "[Enter = yes / n] : ").strip().lower()
         if ans not in ("n", "no", "non"):
-            glb = write_glb(out_dir)
-        cleaned = cleanup_intermediate(out_dir)
+            glb = write_glb(out_dir, packed_name + ".obj", packed_name + ".mtl",
+                            packed_name + ".glb")
+        cleaned = cleanup_intermediate(out_dir, local + ".obj", local + ".mtl")
 
     print()
     print("=" * 62)
     print(f"  DONE  --  {out_dir}")
+    print(f"  Files start with {base}_")
     if packed:
         if packed == 1:
-            print(f"    model_packed.obj -> 1 object, 1 material, atlas.png  <-- import this one")
+            print(f"    _packed.obj -> 1 object, 1 material, _atlas.png  <-- import this one")
         else:
-            print(f"    model_packed.obj -> 1 object, {packed} materials, "
-                  f"atlas_XX.png  <-- import this one")
+            print(f"    _packed.obj -> 1 object, {packed} materials, "
+                  f"_atlas_XX.png  <-- import this one")
         if glb:
-            print(f"    model_packed.glb -> same, binary (Blender / Unreal), "
+            print(f"    _packed.glb -> same, binary (Blender / Unreal), "
                   f"next to its atlases")
         if not cleaned:
-            print(f"    model_local.obj  -> multi-texture (recentred, metres)")
+            print(f"    _local.obj  -> multi-texture (recentred, metres)")
     else:
-        print(f"    model_local.obj  -> recentred, metres  <-- import this one")
+        print(f"    _local.obj  -> recentred, metres  <-- import this one")
     if not cleaned:
-        print(f"    model_local.mtl  -> cleaned-up materials (3ds Max friendly)")
+        print(f"    _local.mtl  -> cleaned-up materials (3ds Max friendly)")
     if not ok:
-        print(f"    model.obj/.mtl   -> raw geocentric (debug)")
+        print(f"    model.obj/.mtl -> raw geocentric (debug)")
     print("=" * 62)
     print()
-    best = "model_packed.obj" if packed else "model_local.obj"
+    best = f"{base}_packed.obj" if packed else f"{base}_local.obj"
     print(f"  Blender : File > Import > Wavefront (.obj) -> {best}.")
     if glb:
-        print("            or File > Import > glTF 2.0 -> model_packed.glb.")
+        print(f"            or File > Import > glTF 2.0 -> {base}_packed.glb.")
     print("            1 unit = 1 m.")
     print(f"  3ds Max : Import OBJ -> {best}, tick 'Import materials'.")
     if packed:
@@ -1110,7 +1164,7 @@ def process(raw):
 def main():
     print()
     print("=" * 62)
-    print("  Earth 3D -> true-to-scale OBJ   (v2.5.1 experimental)")
+    print("  Earth 3D -> true-to-scale OBJ   (v2.6 experimental)")
     print("  [Q + Enter] to quit")
     print("=" * 62)
     print()

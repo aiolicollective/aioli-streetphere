@@ -13,6 +13,8 @@ streetphere.
    suggests a detail from the radius so the volume stays manageable
    (up to 3 km → 20, up to 6 km → 19, up to 10 km → 18); [Enter] takes the
    suggestion, any other value is accepted after a volume warning.
+   Then an optional short name (e.g. `wadirum`), put in front of every file
+   name — [Enter] = none.
 3. The script queries Google Earth's unofficial protocol
    (`kh.google.com/rt/…`, reverse engineered by
    [earth-reverse-engineering](https://github.com/retroplasma/earth-reverse-engineering),
@@ -30,6 +32,7 @@ streetphere.
      converted to `.png`, `.mtl` files cleaned up.
    - The dump is **moved** (not copied) from `earth3d_vendor/` to `output/3d/`,
      and the raw geocentric `model.obj` is deleted once recentred.
+   - The recentred model is `<prefix>_local.obj` (see Output for the prefix).
 6. Optional ([Enter] = yes): **packing** — the textures go into PNG atlas(es)
    (16,384 px ceiling each, anti-seam margins), UVs remapped. Small areas:
    one atlas, one material. When the textures no longer fit in one atlas, the
@@ -45,7 +48,7 @@ streetphere.
    embedded: keep the `.glb` next to its `atlas_XX.png`. For 3ds Max, stay
    on the OBJ.
 8. Optional ([Enter] = keep): delete the multi-texture version
-   (`model_local.*` + tile textures). It is only needed to repack with another
+   (`<prefix>_local.*` + tile textures). It is only needed to repack with another
    atlas count without downloading again.
 
 At the prompts that expect a number (detail, atlas count), `y` / `yes` also
@@ -53,14 +56,30 @@ takes the suggestion, like [Enter].
 
 ## Output
 
-`output/3d/<lat>_<lng>_r<N>m_d<D>/`:
+Every extraction gets its own **prefix**, used for the folder, the files and
+the material names — two extractions imported into the same scene never clash:
 
-- `model_packed.obj` + `model_packed.mtl` + `atlas.png` — 1 material, 1 texture ← import this one
-  (large areas: `atlas_01.png`, `atlas_02.png`… — 1 material per atlas)
-- `model_packed.glb` — same, binary (optional; Blender / Unreal)
-- `model_local.obj` + `model_local.mtl` + textures — multi-texture version
+    [name_]29p5770N_35p4200E_r6000_d19
+
+- GPS position with 4 decimals (~11 m); the sign is written N/S and E/W
+  (standard notation) and the decimal point `p`: `-33.8568, 151.2153` →
+  `33p8568S_151p2153E`. Letters, digits and `_` only: safe for Windows,
+  3ds Max, Blender, Unreal and command lines (no dot, no minus sign, no space).
+- `r6000` = radius in metres (`lvl<N>` in level mode), `d19` = detail.
+- `name_` = the optional name typed at the start (accents removed, other
+  characters turned into `_`, 24 characters max).
+
+`output/3d/<prefix>/`:
+
+- `<prefix>_packed.obj` + `.mtl` + `<prefix>_atlas.png` — 1 material, 1 texture ← import this one
+  (large areas: `<prefix>_atlas_01.png`, `_02`… — 1 material per atlas)
+- `<prefix>_packed.glb` — same, binary (optional; Blender / Unreal)
+- `<prefix>_local.obj` + `.mtl` + tile textures — multi-texture version
   (unless deleted at the end)
 - `model.obj` / `model.mtl` — raw geocentric, kept only if recentring failed
+
+Extractions made before v2.6 keep their old names (`model_packed.obj`,
+`atlas_01.png`…): nothing is renamed after the fact.
 
 (360 spheres go to `output/spheres/` — outputs are kept consistent.)
 
@@ -77,11 +96,11 @@ First run: automatic clone + `npm install` (~1 min).
 
 ## Import
 
-- **Blender**: File > Import > Wavefront (.obj) → `model_packed.obj`,
-  or File > Import > glTF 2.0 → `model_packed.glb` (faster).
+- **Blender**: File > Import > Wavefront (.obj) → `<prefix>_packed.obj`,
+  or File > Import > glTF 2.0 → `<prefix>_packed.glb` (faster).
   One single object, 1 unit = 1 m.
-- **Unreal**: import `model_packed.glb` (atlases in the same folder).
-- **3ds Max**: Import OBJ → `model_packed.obj`, tick "Import materials"
+- **Unreal**: import `<prefix>_packed.glb` (atlases in the same folder).
+- **3ds Max**: Import OBJ → `<prefix>_packed.obj`, tick "Import materials"
   **and "Import as single mesh"** (merges the groups into one object).
   The file is in metres: if your system units are centimetres, set the
   importer's unit option (or scale ×100).
