@@ -553,6 +553,28 @@ def _mb(path):
     return os.path.getsize(path) / 1e6
 
 
+def clear_tiles(z, rng, extra=()):
+    """After a successful run: deletes the tiles it used (+ `extra` paths,
+    e.g. the zoom probe tile), then the folders left empty. Returns the MB
+    freed. The cache only matters to resume an interrupted download."""
+    x0, x1, y0, y1 = rng
+    paths = [tile_path(z, x, y) for y in range(y0, y1 + 1) for x in range(x0, x1 + 1)]
+    freed = 0
+    for pth in list(paths) + list(extra):
+        try:
+            freed += os.path.getsize(pth)
+            os.remove(pth)
+        except OSError:
+            pass
+    for d in sorted({os.path.dirname(pth) for pth in list(paths) + list(extra)} | {CACHE_DIR},
+                    key=len, reverse=True):
+        try:
+            os.rmdir(d)                   # only succeeds when empty
+        except OSError:
+            pass
+    return freed / 1e6
+
+
 # ==============================================================================
 #  MAIN FLOW
 # ==============================================================================
@@ -569,7 +591,9 @@ def ask_radius():
         print(f"  Invalid value (10 to {MAX_RADIUS} m).")
 
 
-def process(session, raw):
+def process(session, raw, radius=None, label=None):
+    """One extraction. radius / label already chosen (combined mode, shared
+    with the 3D mesh) -> those two questions are skipped."""
     coords = extract_lat_lng(raw)
     if not coords:
         print("  [ERROR] Could not extract lat/lng. Paste a Google Maps URL")
@@ -583,7 +607,10 @@ def process(session, raw):
     print(f"  Position : {lat}, {lng}")
     print("=" * 62)
 
-    radius = ask_radius()
+    if radius is None:
+        radius = ask_radius()
+    else:
+        print(f"  Radius   : {radius} m (square of {2 * radius} x {2 * radius} m)")
     print()
     print("  Checking the finest imagery available here...")
     zmax = probe_zoom(session, lat, lng)
@@ -598,7 +625,8 @@ def process(session, raw):
     else:
         mode, n, piece = ask_layout(p, radius)
 
-    label = ask_name()
+    if label is None:
+        label = ask_name()
     print()
     ans = input("  Also export a textured OBJ plane (drops under the 3D mesh)? "
                 "[Enter = yes / n] : ").strip().lower()
@@ -614,7 +642,8 @@ def process(session, raw):
 
     print()
     print(f"  Downloading zoom {p['z']} ({p['tiles']} tiles)...")
-    ok, missing = download(session, p["z"], square_tiles(frame, radius, p["z"]))
+    rng = square_tiles(frame, radius, p["z"])
+    ok, missing = download(session, p["z"], rng)
     if not ok:
         return
     if missing:
@@ -656,6 +685,10 @@ def process(session, raw):
     obj = write_plane_obj(out_dir, base, pieces) if want_obj else None
 
     total = sum(_mb(os.path.join(out_dir, q[0])) for q in pieces)
+    # everything is written: the tiles are no longer needed (they are only
+    # kept when a download is interrupted, to resume it)
+    tx, ty = merc_px(lat, lng, zmax)
+    freed = clear_tiles(p["z"], rng, extra=[tile_path(zmax, int(tx // TILE), int(ty // TILE))])
     print()
     print("=" * 62)
     print(f"  DONE  --  {out_dir}")
@@ -673,8 +706,7 @@ def process(session, raw):
     if obj:
         print(f"    {base}.obj  -> textured plane(s), import next to the mesh")
     print("=" * 62)
-    print(f"  Downloaded tiles kept in {CACHE_DIR} (reused next time;")
-    print("  delete that folder whenever you want).")
+    print(f"  Downloaded tiles deleted ({freed:.1f} MB freed).")
     if obj:
         print()
         print("  3ds Max : Import OBJ, tick 'Import materials', units = metres.")

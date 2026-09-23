@@ -6,8 +6,8 @@ cd /d "%~dp0"
 ::  streetphere.bat  --  aioli-streetphere : launcher menu
 ::  [1] 360 sphere (streetview, needs setup.bat once)
 ::  [2] True-to-scale 3D environment (earth3d)
-::  [3] Both from the same URL (needs setup.bat)
-::  [4] Flat satellite image (satmap, needs setup.bat)
+::  [3] Flat satellite image (satmap, needs setup.bat)
+::  [4] All three from the same URL (both.py, needs setup.bat)
 :: ============================================================
 
 :: -- Python detection (same logic as setup.bat) --------------
@@ -42,16 +42,16 @@ echo   ------------------------------------------------------------
 echo.
 echo   [1] Equirectangular 360 sphere (streetview)
 echo   [2] True-to-scale 3D environment (earth3d)
-echo   [3] Both from the same URL
-echo   [4] Flat satellite image, true to scale (satmap)
+echo   [3] Flat satellite image, true to scale (satmap)
+echo   [4] All three from the same URL
 echo   [Q] Quit
 echo.
 set CHOICE=
 set /p CHOICE="  Choice > "
 if /i "%CHOICE%"=="1" goto :sphere
 if /i "%CHOICE%"=="2" goto :earth3d
-if /i "%CHOICE%"=="3" goto :both
-if /i "%CHOICE%"=="4" goto :satmap
+if /i "%CHOICE%"=="3" goto :satmap
+if /i "%CHOICE%"=="4" goto :both
 if /i "%CHOICE%"=="q" exit /b 0
 goto :menu
 
@@ -76,7 +76,8 @@ if errorlevel 1 (
     echo     Node.js : https://nodejs.org   -- take the LTS version
     echo     Git     : https://git-scm.com
     echo.
-    echo   Option [1], the 360 sphere, works without either of them.
+    echo   Options [1] and [3], the 360 sphere and the satellite image,
+    echo   work without either of them.
     echo.
 )
 goto :menu
@@ -84,7 +85,7 @@ goto :menu
 :both
 if not exist venv\Scripts\python.exe (
     echo.
-    echo  [!] The combined mode needs the venv: run setup.bat first.
+    echo  [!] The all-three mode needs the venv: run setup.bat first.
     goto :menu
 )
 call venv\Scripts\activate.bat

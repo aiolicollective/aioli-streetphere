@@ -86,7 +86,7 @@ Extractions made before v2.6 keep their old names (`model_packed.obj`,
 ## Usage
 
 ```bat
-streetphere.bat  (option 2, or option 3 for sphere + 3D in one go)
+streetphere.bat  (option 2, or option 4 for sphere + 3D + satellite in one go)
 ```
 
 Requirements: Node.js + Git in the PATH. Python is detected automatically

@@ -9,7 +9,10 @@ point and the same radius, it lies exactly under the 3D mesh.
 
 ## How it works
 
-1. You paste a Google Maps URL (or `lat, lng`), exactly as for the other modes.
+1. `streetphere.bat`, option [3]. You paste a Google Maps URL (or `lat, lng`),
+   exactly as for the other modes. Option [4] runs the sphere, the 3D and the
+   satellite from one URL: the radius and the name are then asked once and
+   shared by the 3D and the satellite.
 2. You give a radius in metres (default 150 m, max 10,000 m). The image covers
    the **whole square** of 2 × radius on each side, corners included (the 3D
    module keeps a disc; the satellite square contains that disc).
@@ -58,10 +61,12 @@ Only letters, digits and `_` in the names; a decimal size is written with `p`
 (e.g. `1714p29m`), like the GPS. Without a name, a grid piece is
 `29p5770N_35p4200E_r6000_sat18_6000m_r1c1.jpg`: about as long as the 3D files.
 
-The downloaded tiles stay in `output/sat/_cache/`: an interrupted download
-(Ctrl+C, connection lost, Google refusing) resumes where it stopped when you
-run the same point again, and a second run at the same zoom (to cut instead
-of reduce, for instance) downloads nothing. Delete that folder whenever you want.
+The tiles are downloaded into `output/sat/_cache/` and **deleted once the
+image is done** (the folder disappears when empty). They are only kept when a
+download is interrupted (Ctrl+C, connection lost, Google refusing): run the
+same point again and it resumes where it stopped. Running the same area again
+later downloads it again (roughly 5 min for 8,500 tiles, at the 28 tiles/s
+of a first real run).
 
 ## Using it with the 3D mesh
 

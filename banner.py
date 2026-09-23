@@ -20,7 +20,7 @@ variable is set, sub-processes see it and stay quiet.
 import os
 import sys
 
-VERSION = "2.4"
+VERSION = "2.8"
 
 SITE      = "aiolicollective.com"
 INSTAGRAM = "@aioli.collective"
@@ -144,14 +144,14 @@ def _build(tool=None):
     L += [""]
 
     title = tool or "streetphere"
-    L += ["  %s%s v%s%s  %s2:1 equirectangular 360 panoramas + true-to-scale 3D environments%s"
+    L += ["  %s%s v%s%s  %s360 panoramas + true-to-scale 3D environments + satellite images%s"
           % (C_ACC, title, VERSION, C_OFF, C_DIM, C_OFF)]
     L += [""]
     L += ["  %s site        %s" % (tee, link(SITE))]
     L += ["  %s instagram   %s" % (tee, link("instagram.com/aioli.collective", INSTAGRAM))]
     L += ["  %s github      %s" % (ell, link(REPO))]
     L += [""]
-    L += ["  %ssources   Google Street View / Google Earth data %s project not affiliated with Google%s"
+    L += ["  %ssources   Google Street View / Earth / Maps data %s project not affiliated with Google%s"
           % (C_DIM, dot, C_OFF)]
     L += ["  %s          earth3d : earth-reverse-engineering (retroplasma) %s three.js %s Pillow %s numpy%s"
           % (C_DIM, dot, dot, dot, C_OFF)]

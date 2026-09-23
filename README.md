@@ -26,8 +26,8 @@ and SATMAP.md).
 | What | Needed for | Where |
 |------|-----------|-------|
 | **Python 3.8+** | everything | https://www.python.org/downloads/ |
-| **Node.js** (LTS) | 3D module only — options [2] and [3] | https://nodejs.org |
-| **Git** | 3D module only — options [2] and [3] | https://git-scm.com |
+| **Node.js** (LTS) | 3D module only — option [2], and the 3D part of [4] | https://nodejs.org |
+| **Git** | 3D module only — option [2], and the 3D part of [4] | https://git-scm.com |
 
 If you don't have Python:
 1. Go to https://www.python.org/downloads/
@@ -35,8 +35,9 @@ If you don't have Python:
 3. Run the installer and tick "Add Python to PATH" (important!)
 
 **If you want the 3D module, install Node.js and Git *before* running
-setup.bat.** They are not optional extras for that mode — options [2] and [3]
-refuse to start without them. Option [1], the 360 sphere, needs neither.
+setup.bat.** They are not optional extras for that mode — option [2] refuses
+to start without them, and option [4] then skips the 3D. Options [1] and [3],
+the 360 sphere and the satellite image, need neither.
 
 > **Note on very recent Python versions.** Python 3.12 is the safest choice.
 > A Python released very recently sometimes has no prebuilt package for Pillow
@@ -102,14 +103,15 @@ If it still fails, install **Python 3.12** from
 https://www.python.org/downloads/ (tick "Add Python to PATH"), delete `venv`
 once more, and run setup.bat again.
 
-### Option [2] or [3] shows `[!!] Node.js`
+### Option [2] or [4] shows `[!!] Node.js`
 
 Node.js is not installed, or not in your PATH. Install the LTS version from
 https://nodejs.org, then **close the window and start streetphere.bat again** —
 Windows only picks up a newly installed program in a new window. Same thing for
 `[!!] Git` with https://git-scm.com.
 
-Option [1] (360 sphere) does not need either of them and keeps working.
+Options [1] (360 sphere) and [3] (satellite image) need neither of them and keep
+working.
 
 ### setup.bat cannot find Python
 
@@ -126,7 +128,7 @@ installed — reinstalling with that box ticked is the cleaner fix.
 2. Switch to Street View somewhere you like
 3. Copy the full URL from the address bar
 4. Double-click streetphere.bat (or setup.bat the first time) and choose
-   [1] 360 sphere, [2] 3D environment, [3] both, or [4] satellite image
+   [1] 360 sphere, [2] 3D environment, [3] satellite image, or [4] all three
 5. Paste the URL when the program asks for it and press Enter
 6. Choose the resolution level (Enter = zoom 4 by default)
 
@@ -171,8 +173,9 @@ the resolution is the original resolution of the photo.
   It is up to you to check what your own context allows.
 - Internet connection required: the script talks to Google servers.
 - The 360 sphere (option [1]) needs a Street View link: regular map or
-  satellite links will not work there. Options [2] and [4] take any Google
-  Maps link with a position, or `lat, lng`.
+  satellite links will not work there. Options [2] and [3] take any Google
+  Maps link with a position, or `lat, lng`. Option [4] needs a Street View
+  link for its sphere step; with another link it skips the sphere.
 - No API key required: this tool uses the same CDNs as the browser.
   No Google account is needed.
 
@@ -209,7 +212,8 @@ On top of the 2:1 sphere, the repo contains a module that downloads the textured
 data, unofficial protocol -- no account, no API key) and recentres it at metric
 scale for Blender / 3ds Max.
 
-- Run it: streetphere.bat, option [2] (or [3] for sphere + 3D in one go)
+- Run it: streetphere.bat, option [2] (or [4] for sphere + 3D + satellite
+  in one go)
 - Extra requirements: Node.js and Git in the PATH (no pip dependency:
   this mode does not even need the venv)
 - Radius in metres respected (geometry cropped to the requested disc)
@@ -232,7 +236,9 @@ A flat satellite image of the square around a point (side = 2 x radius),
 north up, centred on the point, at a known scale in metres. It replaces
 screenshots of Google Maps, which lose resolution when you zoom out.
 
-- Run it: streetphere.bat, option [4] (needs the venv, not Node.js / Git)
+- Run it: streetphere.bat, option [3] (needs the venv, not Node.js / Git);
+  option [4] runs it after the sphere and the 3D, with the radius and the
+  name asked once and shared by the 3D and the satellite
 - Same URL / `lat, lng` input and same radius as the 3D module; the image
   covers the whole square, corners included
 - Resolution: the zoom levels Google has at that spot, shown with the number
@@ -247,7 +253,8 @@ screenshots of Google Maps, which lose resolution when you zoom out.
 - Output: output/sat/<prefix>/, e.g. wadirum_29p5770N_35p4200E_r6000_sat18/
   (sat18 = satellite, zoom 18), each image named with the metres it covers
   (<prefix>_12000m.jpg, or <prefix>_6000m_r1c1.jpg... for a grid) + a .txt
-  with sizes and positions
+  with sizes and positions; the downloaded tiles are deleted once the image
+  is done (kept only to resume an interrupted download)
 - Full documentation: SATMAP.md
 
 ---
@@ -294,10 +301,10 @@ rejected cleanly rather than rendered distorted.
 
     .
     +-- setup.bat                 Installation (venv + dependencies) -- run once
-    +-- streetphere.bat           The launcher: 360 sphere / 3D / both / satellite
+    +-- streetphere.bat           The launcher: 360 sphere / 3D / satellite / all three
     +-- streetview.py             Equirectangular 360 sphere
     +-- earth3d.py                3D module: textured, true-to-scale mesh
-    +-- both.py                   Combined mode: sphere + 3D from the same URL
+    +-- both.py                   All three from the same URL (sphere + 3D + satellite)
     +-- satmap.py                 Satellite module: flat image, true to scale
     +-- banner.py                 Intro screen (logo, links, credits)
     +-- earth3d_radius.js         3D helper: octant selection by radius
@@ -311,7 +318,7 @@ rejected cleanly rather than rendered distorted.
     +-- earth3d_vendor/           Third-party exporter, cloned automatically (3D module)
     +-- output/spheres/           2:1 panoramas (+ intermediate tiles/)
     +-- output/3d/                3D environments (<prefix>_packed.obj/.glb + atlas)
-    +-- output/sat/               Satellite images (+ _cache/ of downloaded tiles)
+    +-- output/sat/               Satellite images (+ _cache/ while downloading)
 
 ---
 
