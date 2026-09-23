@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-earth3d.py  --  Google Earth 3D -> true-to-scale OBJ (v2.3, experimental)
-========================================================================
+earth3d.py  --  Google Earth 3D -> true-to-scale OBJ (v2.5, experimental)
+=========================================================================
 From a Google Maps URL (or lat,lng) and a radius in metres, downloads the
 textured 3D mesh of the surroundings (Google Earth data) and recentres it
 at metric scale (scale auto-detected), ready to import into Blender or
@@ -120,6 +120,14 @@ def extract_lat_lng(text):
 # ==============================================================================
 
 DEFAULT_RADIUS = 150   # default radius in metres
+MAX_RADIUS     = 10000 # max radius in metres
+
+# Volume reference: 3000 m radius at detail 20 (real test, 2026-09)
+# = ~54,000 tiles, ~6.9 M vertices downloaded, packed fine in one run.
+# Estimate used for the suggestion: the tile count grows with the area
+# (radius squared) and is multiplied by ~4 per extra detail level.
+REF_RADIUS = 3000
+REF_DETAIL = 20
 
 
 def ask_radius():
@@ -129,9 +137,24 @@ def ask_radius():
                     f"[Enter = {DEFAULT_RADIUS}] : ").strip()
         if raw == "":
             return DEFAULT_RADIUS
-        if raw.isdigit() and 10 <= int(raw) <= 3000:
+        if raw.isdigit() and 10 <= int(raw) <= MAX_RADIUS:
             return int(raw)
-        print("  Invalid value (10 to 3000 m).")
+        print(f"  Invalid value (10 to {MAX_RADIUS} m).")
+
+
+def volume_factor(radius, detail):
+    """Rough download volume, relative to the reference extraction
+    (3000 m at detail 20 = 1.0)."""
+    return (float(radius) / REF_RADIUS) ** 2 * 4.0 ** (detail - REF_DETAIL)
+
+
+def suggest_detail(radius):
+    """Highest detail that keeps the volume at or below the reference:
+    up to 3000 m -> 20, up to 6000 m -> 19, up to 12000 m -> 18."""
+    if not radius or radius <= REF_RADIUS:
+        return DEFAULT_DETAIL
+    steps = math.ceil(math.log2(float(radius) / REF_RADIUS) - 1e-9)
+    return max(1, REF_DETAIL - steps)
 
 
 def find_octants_radius(lat, lng, radius):
@@ -210,21 +233,35 @@ def ask_octant_level(levels):
         print(f"  Invalid value. Available levels: {sorted(levels)}")
 
 
-def ask_detail():
+def ask_detail(radius=None):
+    suggested = suggest_detail(radius)
     print()
     print("  Detail (Google Earth LOD level):")
     print("    17-18 -> coarse volumes, very light (blocking/distant)")
     print("    19    -> intermediate")
-    print("    20    -> usual maximum in cities  <-- recommended")
-    print("  Weight/time grows fast; above 20 it is rarely available")
-    print("  (the dump stops at the deepest existing level anyway).")
+    print("    20    -> usual maximum in cities")
+    print("  Each extra level = about 4x more tiles; above 20 it is rarely")
+    print("  available (the dump stops at the deepest existing level anyway).")
+    if radius and suggested < DEFAULT_DETAIL:
+        print(f"  Suggested for a {radius} m radius: {suggested} (keeps the volume")
+        print(f"  at or below a {REF_RADIUS} m radius at detail {REF_DETAIL}).")
     while True:
-        raw = input(f"  Max detail [Enter = {DEFAULT_DETAIL}] : ").strip()
+        raw = input(f"  Max detail [Enter = {suggested}] : ").strip()
         if raw == "":
-            return DEFAULT_DETAIL
-        if raw.isdigit() and 1 <= int(raw) <= 30:
-            return int(raw)
-        print("  Invalid value (1-30).")
+            return suggested
+        if not (raw.isdigit() and 1 <= int(raw) <= 30):
+            print("  Invalid value (1-30).")
+            continue
+        detail = int(raw)
+        f = volume_factor(radius, detail) if radius else 0.0
+        if f > 1.5:
+            print(f"  [!] About x{f:.0f} the volume of a {REF_RADIUS} m radius at "
+                  f"detail {REF_DETAIL} (estimate):")
+            print("      long download, tens of GB on disk, heavy import.")
+            ans = input("      Keep this detail? [Enter = yes / n] : ").strip().lower()
+            if ans in ("n", "no", "non"):
+                continue
+        return detail
 
 
 # ==============================================================================
@@ -411,12 +448,19 @@ def recenter_obj(obj_in, obj_out, lat, lng, radius=None):
                 fout.write(line)
 
     # ---- diagnostics ----------------------------------------------------
-    kE = [E[i] - dE for i in range(n) if keep[i]]
-    kN = [N[i] - dN for i in range(n) if keep[i]]
-    kU = [U[i] - u_min for i in range(n) if keep[i]]
+    # (min/max in one loop: no copy of the kept vertices, RAM stays flat)
+    e0 = n0 = u1 = -math.inf
+    e1 = n1 = math.inf
+    for i in range(n):
+        if keep[i]:
+            if E[i] > e0: e0 = E[i]
+            if E[i] < e1: e1 = E[i]
+            if N[i] > n0: n0 = N[i]
+            if N[i] < n1: n1 = N[i]
+            if U[i] > u1: u1 = U[i]
     print(f"  [OK] {nv} vertices ({dropped_faces} faces outside the radius removed)")
-    print(f"       area {max(kE)-min(kE):.0f} x {max(kN)-min(kN):.0f} m, "
-          f"height {max(kU):.0f} m | 1 unit = 1 m")
+    print(f"       area {e0-e1:.0f} x {n0-n1:.0f} m, "
+          f"height {u1-u_min:.0f} m | 1 unit = 1 m")
     print(f"       mesh centre {math.hypot(mE-dE, mN-dN):.0f} m "
           f"from the origin")
     return True
@@ -454,27 +498,123 @@ def convert_bmp_textures(out_dir):
 
 ATLAS_MAX = 16384      # max atlas size (px), readable everywhere
 ATLAS_GUTTER = 4       # margin between textures (avoids mip bleeding)
+ATLAS_FILL = 0.75      # usable share of an atlas with shelf packing (measured ~0.72-0.74)
+ATLAS_TARGET = 0.5     # the suggested count keeps textures at >= ~50 %
+ATLAS_SUGGEST_MAX = 8  # the suggestion never goes above this
+ATLAS_MAX_N = 16       # highest count accepted at the prompt
+
+
+def _atlas_layout(order, sizes, atlas_w, scale, g):
+    """Shelf packing of the textures (already sorted) at a given scale.
+    Returns ({material: (x, y, w, h)}, used height)."""
+    pos, x, y, row_h = {}, g, g, 0
+    for m in order:
+        w = max(1, int(sizes[m][0] * scale))
+        h = max(1, int(sizes[m][1] * scale))
+        if x + w + g > atlas_w:
+            x = g; y += row_h + g; row_h = 0
+        pos[m] = (x, y, w, h)
+        x += w + g; row_h = max(row_h, h)
+    return pos, y + row_h + g
+
+
+def _atlas_plan(names, sizes, g):
+    """Layout of ONE atlas (same rules as the single atlas of v2.3):
+    width ~ square, textures scaled down until the height fits.
+    Returns (pos, atlas_w, atlas_h, scale)."""
+    order = sorted(names, key=lambda m: -sizes[m][1])
+    total_area = sum((sizes[m][0] + g) * (sizes[m][1] + g) for m in order)
+    atlas_w = min(ATLAS_MAX, max(1024, 1 << (int(total_area ** 0.5) - 1).bit_length()))
+
+    scale = 1.0
+    pos, atlas_h = _atlas_layout(order, sizes, atlas_w, scale, g)
+    while atlas_h > ATLAS_MAX and scale > 0.05:
+        scale *= (ATLAS_MAX / float(atlas_h)) ** 0.5 * 0.98
+        pos, atlas_h = _atlas_layout(order, sizes, atlas_w, scale, g)
+    atlas_h = min(1 << (atlas_h - 1).bit_length(), ATLAS_MAX)
+    pos, real_h = _atlas_layout(order, sizes, atlas_w, scale, g)
+    if real_h > atlas_h:
+        atlas_h = min(ATLAS_MAX, 1 << (real_h - 1).bit_length())
+    return pos, atlas_w, atlas_h, scale
+
+
+def _atlas_split(names, sizes, n, g):
+    """Cuts the textures into n groups of similar pixel area. The names
+    (tex_<octant path>_<i>) are sorted first: the octant path is a
+    quadtree address, so neighbouring names = neighbouring tiles, and
+    each atlas covers one contiguous area of the ground."""
+    names = sorted(names)
+    area = {m: (sizes[m][0] + g) * (sizes[m][1] + g) for m in names}
+    target = sum(area.values()) / float(n)
+    chunks = [[] for _ in range(n)]
+    cum = 0.0
+    for m in names:
+        k = min(n - 1, int((cum + area[m] / 2.0) / target))
+        chunks[k].append(m)
+        cum += area[m]
+    return [c for c in chunks if c]
+
+
+def _atlas_estimate(total_px, n):
+    """Expected texture scale with n atlases (1.0 = full resolution)."""
+    return min(1.0, (ATLAS_MAX * ATLAS_MAX * ATLAS_FILL * n / float(total_px)) ** 0.5)
+
+
+def _ask_atlas_count(n_tex, total_px):
+    """Shows the resolution each atlas count would give and lets the user
+    choose. Skipped (1 atlas) when everything fits at full resolution."""
+    if _atlas_estimate(total_px, 1) >= 1.0:
+        return 1
+    suggested = 1
+    while (_atlas_estimate(total_px, suggested) < ATLAS_TARGET
+           and suggested < ATLAS_SUGGEST_MAX):
+        suggested += 1
+    print()
+    print(f"  [i] {n_tex} textures, {total_px / 1e6:.0f} Mpx in total: "
+          f"too much for one {ATLAS_MAX}px atlas.")
+    print("      Textures kept at about (estimate):")
+    for n in sorted({1, 2, 4, 8, suggested}):
+        mark = "  <-- suggested" if n == suggested else ""
+        print(f"        {n:2d} atlas{'es' if n > 1 else '  '} -> "
+              f"{_atlas_estimate(total_px, n) * 100:3.0f} %{mark}")
+    print("      More atlases = sharper, but heavier in RAM/VRAM once imported")
+    print(f"      (up to ~1 GB each). Each atlas covers one area of the ground.")
+    while True:
+        raw = input(f"  Number of atlases [Enter = {suggested}] : ").strip()
+        if raw == "":
+            return suggested
+        if raw.isdigit() and 1 <= int(raw) <= ATLAS_MAX_N:
+            return int(raw)
+        print(f"  Invalid value (1-{ATLAS_MAX_N}).")
 
 
 def pack_obj(out_dir, obj_name="model_local.obj"):
-    """Merges the tiles with ONE SINGLE material: every texture is packed
-    into a single PNG atlas and the UVs are remapped to each tile's slot.
+    """Merges the tiles into ONE object with as few materials as possible:
+    the textures are packed into PNG atlas(es) and the UVs are remapped to
+    each tile's slot. Small areas: 1 atlas, 1 material (as in v2.3).
+    Large areas: N atlases (suggested from the texture volume, the user
+    chooses), 1 material per atlas, each covering one area of the ground.
     The tiles stay in 'g' groups (see the note about the Max importer).
 
-    Produces: model_packed.obj + model_packed.mtl + atlas.png.
-    Requires Pillow. The multi-texture files are kept."""
+    Textures are opened one at a time (only their size is read up front):
+    RAM use stays at about one atlas, whatever the size of the area.
+
+    Produces: model_packed.obj + model_packed.mtl + atlas.png
+    (or atlas_01.png, atlas_02.png...). Requires Pillow.
+    The multi-texture files are kept. Returns the number of atlases
+    (0 = packing not done)."""
     import array
     try:
         from PIL import Image
     except ImportError:
         print("  [!] Pillow missing: atlas packing impossible (setup.bat venv).")
-        return False
+        return 0
 
     obj_in  = os.path.join(out_dir, obj_name)
     mtl_in  = os.path.join(out_dir, "model_local.mtl")
     if not (os.path.isfile(obj_in) and os.path.isfile(mtl_in)):
         print("  [!] Missing files for packing.")
-        return False
+        return 0
 
     # ---- materials -> texture files ------------------------------------
     mat_tex = {}
@@ -501,85 +641,78 @@ def pack_obj(out_dir, obj_name="model_local.obj"):
             elif line.startswith("vt "):
                 mat_of_vt.append(cur_idx)
 
-    used = [m for m in mats if m in mat_tex]
+    used = sorted(set(m for m in mats if m in mat_tex))
     if not used:
         print("  [!] No texture referenced: packing cancelled.")
-        return False
+        return 0
 
-    # ---- loading the textures + layout (shelf packing) -----------------
-    imgs = {}
-    for m in set(used):
+    # ---- texture sizes only (header read, no pixels in RAM) ------------
+    sizes = {}
+    for m in used:
         p = os.path.join(out_dir, mat_tex[m])
         if not os.path.isfile(p):
             print(f"  [!] Texture missing: {mat_tex[m]} -> packing cancelled.")
-            return False
-        imgs[m] = Image.open(p).convert("RGB")
+            return 0
+        with Image.open(p) as im:
+            sizes[m] = im.size
 
     g = ATLAS_GUTTER
-    order = sorted(set(used), key=lambda m: -imgs[m].height)
-    # target width ~ square
-    total_area = sum((imgs[m].width + g) * (imgs[m].height + g) for m in order)
-    atlas_w = min(ATLAS_MAX, max(1024, 1 << (int(total_area ** 0.5) - 1).bit_length()))
+    total_px = sum((sizes[m][0] + g) * (sizes[m][1] + g) for m in used)
+    n_atlas = _ask_atlas_count(len(used), total_px)
+    groups = _atlas_split(used, sizes, n_atlas, g)
+    single = (len(groups) == 1)
 
-    def layout(scale):
-        pos, x, y, row_h, W = {}, g, g, 0, atlas_w
-        for m in order:
-            w = max(1, int(imgs[m].width * scale))
-            h = max(1, int(imgs[m].height * scale))
-            if x + w + g > W:
-                x = g; y += row_h + g; row_h = 0
-            pos[m] = (x, y, w, h)
-            x += w + g; row_h = max(row_h, h)
-        return pos, y + row_h + g
+    # ---- one atlas per group ---------------------------------------------
+    atlas_names = (["atlas"] if single else
+                   [f"atlas_{k + 1:02d}" for k in range(len(groups))])
+    where = {}       # material -> (atlas index, x, y, w, h, W, H)
+    for k, names in enumerate(groups):
+        pos, atlas_w, atlas_h, scale = _atlas_plan(names, sizes, g)
+        label = "Atlas" if single else f"Atlas {k + 1}/{len(groups)}"
+        if scale < 1.0:
+            print(f"  [i] {label} capped at {ATLAS_MAX}px: textures scaled down "
+                  f"to {scale*100:.0f}% to fit.")
+        print(f"  [i] {label} {atlas_w} x {atlas_h} px, "
+              f"{len(names)} textures packed...")
+        atlas = Image.new("RGB", (atlas_w, atlas_h), (0, 0, 0))
+        for m, (x, y, w, h) in pos.items():
+            with Image.open(os.path.join(out_dir, mat_tex[m])) as src:
+                im = src.convert("RGB")
+            if (w, h) != im.size:
+                im = im.resize((w, h))
+            atlas.paste(im, (x, y))
+            # bleed: duplicates the edges and corners into the margin
+            if g:
+                atlas.paste(im.crop((0, 0, w, 1)).resize((w, g)), (x, y - g))
+                atlas.paste(im.crop((0, h - 1, w, h)).resize((w, g)), (x, y + h))
+                atlas.paste(im.crop((0, 0, 1, h)).resize((g, h)), (x - g, y))
+                atlas.paste(im.crop((w - 1, 0, w, h)).resize((g, h)), (x + w, y))
+                atlas.paste(im.crop((0, 0, 1, 1)).resize((g, g)), (x - g, y - g))
+                atlas.paste(im.crop((w - 1, 0, w, 1)).resize((g, g)), (x + w, y - g))
+                atlas.paste(im.crop((0, h - 1, 1, h)).resize((g, g)), (x - g, y + h))
+                atlas.paste(im.crop((w - 1, h - 1, w, h)).resize((g, g)), (x + w, y + h))
+            where[m] = (k, x, y, w, h, float(atlas_w), float(atlas_h))
+        atlas.save(os.path.join(out_dir, atlas_names[k] + ".png"))
+        del atlas
 
-    scale = 1.0
-    pos, atlas_h = layout(scale)
-    while atlas_h > ATLAS_MAX and scale > 0.05:
-        scale *= (ATLAS_MAX / float(atlas_h)) ** 0.5 * 0.98
-        pos, atlas_h = layout(scale)
-    atlas_h = min(1 << (atlas_h - 1).bit_length(), ATLAS_MAX)
-    pos, real_h = layout(scale)
-    if real_h > atlas_h:
-        atlas_h = min(ATLAS_MAX, 1 << (real_h - 1).bit_length())
-
-    if scale < 1.0:
-        print(f"  [i] Atlas capped at {ATLAS_MAX}px: textures scaled down "
-              f"to {scale*100:.0f}% to fit.")
-
-    print(f"  [i] Atlas {atlas_w} x {atlas_h} px, "
-          f"{len(set(used))} textures packed...")
-    atlas = Image.new("RGB", (atlas_w, atlas_h), (0, 0, 0))
-    for m, (x, y, w, h) in pos.items():
-        im = imgs[m] if (w, h) == imgs[m].size else imgs[m].resize((w, h))
-        atlas.paste(im, (x, y))
-        # bleed: duplicates the edges and corners into the margin
-        if g:
-            atlas.paste(im.crop((0, 0, w, 1)).resize((w, g)), (x, y - g))
-            atlas.paste(im.crop((0, h - 1, w, h)).resize((w, g)), (x, y + h))
-            atlas.paste(im.crop((0, 0, 1, h)).resize((g, h)), (x - g, y))
-            atlas.paste(im.crop((w - 1, 0, w, h)).resize((g, h)), (x + w, y))
-            atlas.paste(im.crop((0, 0, 1, 1)).resize((g, g)), (x - g, y - g))
-            atlas.paste(im.crop((w - 1, 0, w, 1)).resize((g, g)), (x + w, y - g))
-            atlas.paste(im.crop((0, h - 1, 1, h)).resize((g, g)), (x - g, y + h))
-            atlas.paste(im.crop((w - 1, h - 1, w, h)).resize((g, g)), (x + w, y + h))
-    atlas.save(os.path.join(out_dir, "atlas.png"))
-
-    # ---- pass 2: rewrite the obj (one material, remapped UVs) ----------
+    # ---- pass 2: rewrite the obj (remapped UVs) --------------------------
     with open(os.path.join(out_dir, "model_packed.mtl"), "w",
               encoding="utf-8") as f:
-        f.write("newmtl atlas\nKa 1.000 1.000 1.000\nKd 1.000 1.000 1.000\n"
-                "d 1.0\nillum 1\nmap_Kd atlas.png\n")
+        for name in atlas_names:
+            f.write(f"newmtl {name}\nKa 1.000 1.000 1.000\nKd 1.000 1.000 1.000\n"
+                    f"d 1.0\nillum 1\nmap_Kd {name}.png\n")
+            if not single:
+                f.write("\n")
 
-    W, H = float(atlas_w), float(atlas_h)
     vt_i = 0
+    emitted = 0      # atlas of the last usemtl written
     with open(obj_in, "r", encoding="utf-8", errors="replace") as fin, \
          open(os.path.join(out_dir, "model_packed.obj"), "w",
               encoding="utf-8") as fout:
-        # One single material, but we KEEP the tile groups (g):
-        # the 3ds Max OBJ importer breaks the geometry on a single block of
-        # several million faces. Blender does not split on g (one object);
-        # in Max, tick 'Import as single mesh'.
-        fout.write("mtllib model_packed.mtl\nusemtl atlas\n")
+        # We KEEP the tile groups (g): the 3ds Max OBJ importer breaks the
+        # geometry on a single block of several million faces. Blender does
+        # not split on g (one object); in Max, tick 'Import as single mesh'.
+        fout.write(f"mtllib model_packed.mtl\nusemtl {atlas_names[0]}\n")
         for line in fin:
             if line.startswith("vt "):
                 p = line.split()
@@ -587,22 +720,33 @@ def pack_obj(out_dir, obj_name="model_local.obj"):
                 v = min(max(float(p[2]), 0.0), 1.0)
                 mi = mat_of_vt[vt_i]; vt_i += 1
                 m = mats[mi] if 0 <= mi < len(mats) else None
-                if m in pos:
-                    x, y, w, h = pos[m]
+                if m in where:
+                    _, x, y, w, h, W, H = where[m]
                     u = (x + u * w) / W
                     v = (H - (y + h) + v * h) / H   # OBJ origin at the bottom
                 fout.write(f"vt {u:.6f} {v:.6f}\n")
             elif line.startswith("o "):
                 fout.write("g " + line[2:])        # object -> group
-            elif line.startswith(("usemtl", "mtllib", "g ")):
+            elif line.startswith("usemtl "):
+                if not single:
+                    m = line.split(None, 1)[1].strip()
+                    if m in where and where[m][0] != emitted:
+                        emitted = where[m][0]
+                        fout.write(f"usemtl {atlas_names[emitted]}\n")
+                continue
+            elif line.startswith(("mtllib", "g ")):
                 continue
             else:
                 fout.write(line)
 
-    print(f"  [OK] model_packed.obj : 1 material, atlas.png, tiles as groups.")
+    if single:
+        print(f"  [OK] model_packed.obj : 1 material, atlas.png, tiles as groups.")
+    else:
+        print(f"  [OK] model_packed.obj : {len(groups)} materials, "
+              f"atlas_01.png..atlas_{len(groups):02d}.png, tiles as groups.")
     print(f"       Blender: direct import (1 object). 3ds Max: tick")
     print(f"       'Import as single mesh' in the OBJ importer.")
-    return True
+    return len(groups)
 
 
 def write_clean_mtl(mtl_in, mtl_out):
@@ -665,7 +809,7 @@ def process(raw):
         octants = levels[lvl]
         radius  = None
 
-    detail = ask_detail()
+    detail = ask_detail(radius)
 
     dump_dir = dump_octants(octants, detail)
     if not dump_dir:
@@ -691,10 +835,10 @@ def process(raw):
                       os.path.join(out_dir, "model_local.obj"),
                       lat, lng, radius=radius)
 
-    packed = False
+    packed = 0       # number of atlases (0 = not packed)
     if ok:
         print()
-        ans = input("  Pack into a single object + texture atlas? "
+        ans = input("  Pack into a single object + texture atlas(es)? "
                     "[Enter = yes / n] : ").strip().lower()
         if ans not in ("n", "no", "non"):
             packed = pack_obj(out_dir)
@@ -703,7 +847,11 @@ def process(raw):
     print("=" * 62)
     print(f"  DONE  --  {out_dir}")
     if packed:
-        print(f"    model_packed.obj -> 1 object, 1 material, atlas.png  <-- import this one")
+        if packed == 1:
+            print(f"    model_packed.obj -> 1 object, 1 material, atlas.png  <-- import this one")
+        else:
+            print(f"    model_packed.obj -> 1 object, {packed} materials, "
+                  f"atlas_XX.png  <-- import this one")
         print(f"    model_local.obj  -> multi-texture (recentred, metres)")
     else:
         print(f"    model_local.obj  -> recentred, metres  <-- import this one")
@@ -726,7 +874,7 @@ def process(raw):
 def main():
     print()
     print("=" * 62)
-    print("  Earth 3D -> true-to-scale OBJ   (v2.3 experimental)")
+    print("  Earth 3D -> true-to-scale OBJ   (v2.5 experimental)")
     print("  [Q + Enter] to quit")
     print("=" * 62)
     print()

@@ -8,8 +8,11 @@ streetphere.
 ## How it works
 
 1. You paste a Google Maps URL (or `lat, lng`). The script extracts the position.
-2. You give a radius in metres (default 150 m, max 3000 m) and a level of
-   detail (Google Earth LOD: 17-18 light, 20 = recommended maximum).
+2. You give a radius in metres (default 150 m, max 10,000 m) and a level of
+   detail (Google Earth LOD: 17-18 light, 20 = usual maximum). The script
+   suggests a detail from the radius so the volume stays manageable
+   (up to 3 km → 20, up to 6 km → 19, up to 10 km → 18); [Enter] takes the
+   suggestion, any other value is accepted after a volume warning.
 3. The script queries Google Earth's unofficial protocol
    (`kh.google.com/rt/…`, reverse engineered by
    [earth-reverse-engineering](https://github.com/retroplasma/earth-reverse-engineering),
@@ -24,8 +27,13 @@ streetphere.
    - **cropping to the radius**: faces outside the disc are removed (~15 m margin),
    - the dump's `.bmp` textures (32-bit, not read properly by 3ds Max) are
      converted to `.png`, `.mtl` files cleaned up.
-6. Optional ([Enter] = yes): **packing** — every texture into a single PNG atlas
-   (16,384 px ceiling, anti-seam margins), UVs remapped, one single material.
+6. Optional ([Enter] = yes): **packing** — the textures go into PNG atlas(es)
+   (16,384 px ceiling each, anti-seam margins), UVs remapped. Small areas:
+   one atlas, one material. When the textures no longer fit in one atlas, the
+   script shows the resolution each atlas count would give and suggests one
+   (textures kept at about 50 % or more, 8 atlases at most); [Enter] takes it.
+   Each atlas covers one contiguous area of the ground, one material per atlas.
+   Textures are loaded one at a time: RAM stays at about one atlas.
    Tiles stay in `g` groups (required so that the 3ds Max OBJ importer does not
    break the geometry).
 
@@ -34,6 +42,7 @@ streetphere.
 `output/3d/<lat>_<lng>_r<N>m_d<D>/`:
 
 - `model_packed.obj` + `model_packed.mtl` + `atlas.png` — 1 material, 1 texture ← import this one
+  (large areas: `atlas_01.png`, `atlas_02.png`… — 1 material per atlas)
 - `model_local.obj` + `model_local.mtl` + textures — multi-texture version
 - `model.obj` / `model.mtl` — raw geocentric (debug)
 
@@ -70,9 +79,14 @@ nothing global.
 - Unofficial protocol: it can break without notice on Google's side.
 - Downloading happens by whole cells before the geometry is cropped to the
   radius: the downloaded volume can exceed what is kept.
-- Atlas capped at 16,384 px: over very large areas, textures are scaled down
-  proportionally (reported in the log) — use the multi-texture version instead
-  if resolution matters most.
+- Atlas capped at 16,384 px: over large areas, textures are scaled down
+  (reported in the log) unless you split them over several atlases.
+- Detail suggestion and atlas estimates are rules of thumb (each detail level
+  ≈ 4× more tiles, reference: 3 km at detail 20 ≈ 54,000 tiles, 6.9 M vertices).
+- Large radii: the output folder holds the dump plus its processed copies,
+  count several GB to tens of GB on disk.
+- The mesh is kept on the curved Earth (true geometry): the edge of a 6 km
+  radius sits ~2.8 m below the tangent plane of the centre, ~7.8 m at 10 km.
 - LOD: the maximum detail depends on the city's 3D coverage.
 - The ground is pinned to the lowest point of the mesh (an approximation).
 

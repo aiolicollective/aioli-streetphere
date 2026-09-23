@@ -1,4 +1,7 @@
 @echo off
+:: Always work from the folder this script sits in (run as admin,
+:: from another terminal folder, via a shortcut...).
+cd /d "%~dp0"
 :: ============================================================
 ::  setup.bat  --  Virtual environment installer
 ::
