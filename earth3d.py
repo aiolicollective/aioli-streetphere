@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-earth3d.py  --  Google Earth 3D -> true-to-scale OBJ (v2.5, experimental)
-=========================================================================
+earth3d.py  --  Google Earth 3D -> true-to-scale OBJ (v2.5.1, experimental)
+===========================================================================
 From a Google Maps URL (or lat,lng) and a radius in metres, downloads the
 textured 3D mesh of the surroundings (Google Earth data) and recentres it
 at metric scale (scale auto-detected), ready to import into Blender or
@@ -129,6 +129,10 @@ MAX_RADIUS     = 10000 # max radius in metres
 REF_RADIUS = 3000
 REF_DETAIL = 20
 
+# Answers taken as "yes, the suggestion" (same as Enter) at the prompts that
+# expect a number: typing y by reflex must not be an error.
+YES = ("y", "yes", "o", "oui")
+
 
 def ask_radius():
     print()
@@ -247,7 +251,7 @@ def ask_detail(radius=None):
         print(f"  at or below a {REF_RADIUS} m radius at detail {REF_DETAIL}).")
     while True:
         raw = input(f"  Max detail [Enter = {suggested}] : ").strip()
-        if raw == "":
+        if raw == "" or raw.lower() in YES:
             return suggested
         if not (raw.isdigit() and 1 <= int(raw) <= 30):
             print("  Invalid value (1-30).")
@@ -425,6 +429,16 @@ def recenter_obj(obj_in, obj_out, lat, lng, radius=None):
                     # ENU -> OBJ Y-up: x=east, y=altitude, z=-north (south)
                     fout.write(f"v {E[vi-1]-dE:.3f} "
                                f"{U[vi-1]-u_min:.3f} {-(N[vi-1]-dN):.3f}\n")
+            elif line.startswith("vn "):
+                # normals are geocentric in the dump: same rotation as the
+                # vertices (ENU -> Y-up), otherwise the shading is off
+                p = line.split()
+                x, y, z = float(p[1]), float(p[2]), float(p[3])
+                a = ex * x + ey * y + ez * z
+                b = ux * x + uy * y + uz * z
+                c = -(nx * x + ny * y + nz * z)
+                ln = math.sqrt(a * a + b * b + c * c) or 1.0
+                fout.write(f"vn {a/ln:.4f} {b/ln:.4f} {c/ln:.4f}\n")
             elif line.startswith("f "):
                 toks = line.split()[1:]
                 new = []
@@ -498,7 +512,8 @@ def convert_bmp_textures(out_dir):
 
 ATLAS_MAX = 16384      # max atlas size (px), readable everywhere
 ATLAS_GUTTER = 4       # margin between textures (avoids mip bleeding)
-ATLAS_FILL = 0.75      # usable share of an atlas with shelf packing (measured ~0.72-0.74)
+ATLAS_FILL = 0.9       # usable share of an atlas (real test, 2026-09: ~0.93;
+                       # tiles of mixed sizes pack worse, ~0.73)
 ATLAS_TARGET = 0.5     # the suggested count keeps textures at >= ~50 %
 ATLAS_SUGGEST_MAX = 8  # the suggestion never goes above this
 ATLAS_MAX_N = 16       # highest count accepted at the prompt
@@ -581,7 +596,7 @@ def _ask_atlas_count(n_tex, total_px):
     print(f"      (up to ~1 GB each). Each atlas covers one area of the ground.")
     while True:
         raw = input(f"  Number of atlases [Enter = {suggested}] : ").strip()
-        if raw == "":
+        if raw == "" or raw.lower() in YES:
             return suggested
         if raw.isdigit() and 1 <= int(raw) <= ATLAS_MAX_N:
             return int(raw)
@@ -749,6 +764,202 @@ def pack_obj(out_dir, obj_name="model_local.obj"):
     return len(groups)
 
 
+def write_glb(out_dir, obj_name="model_packed.obj", mtl_name="model_packed.mtl"):
+    """Writes model_packed.glb from the packed OBJ: same geometry, same
+    axes (Y-up, metres), one primitive per atlas material. The atlases are
+    REFERENCED, not embedded (they already sit next to it, no copy of
+    several GB): keep the .glb in the same folder as its atlas_XX.png.
+    Binary = lighter and much faster to import than the OBJ text
+    (Blender, Unreal). Stdlib only. Returns True on success."""
+    import array
+    import json
+    import struct
+
+    obj_in = os.path.join(out_dir, obj_name)
+    mtl_in = os.path.join(out_dir, mtl_name)
+    if not (os.path.isfile(obj_in) and os.path.isfile(mtl_in)):
+        print("  [!] model_packed.obj/.mtl missing: .glb skipped.")
+        return False
+
+    mat_tex = {}
+    cur = None
+    with open(mtl_in, "r", encoding="utf-8", errors="replace") as f:
+        for line in f:
+            t = line.strip()
+            if t.startswith("newmtl "):
+                cur = t.split(None, 1)[1]
+            elif t.startswith("map_Kd ") and cur:
+                mat_tex[cur] = t.split(None, 1)[1]
+
+    print("  [i] Writing model_packed.glb...")
+    V = array.array("f"); T = array.array("f"); N = array.array("f")
+    pos = array.array("f"); uv = array.array("f"); nor = array.array("f")
+    prims = {}                 # material -> triangle indices
+    order = []                 # materials in order of appearance
+    cur_mat = None
+    local = {}                 # "v/vt/vn" token -> new index, per tile
+    with open(obj_in, "r", encoding="utf-8", errors="replace") as f:
+        for line in f:
+            c = line[:2]
+            if c == "v ":
+                p = line.split(); V.append(float(p[1])); V.append(float(p[2])); V.append(float(p[3]))
+            elif c == "vt":
+                p = line.split(); T.append(float(p[1])); T.append(float(p[2]))
+            elif c == "vn":
+                p = line.split(); N.append(float(p[1])); N.append(float(p[2])); N.append(float(p[3]))
+            elif c == "f ":
+                ids = []
+                for tok in line.split()[1:]:
+                    i = local.get(tok)
+                    if i is None:
+                        parts = tok.split("/")
+                        k = int(parts[0]) - 1
+                        pos.append(V[3 * k]); pos.append(V[3 * k + 1]); pos.append(V[3 * k + 2])
+                        if len(parts) > 1 and parts[1]:
+                            k = int(parts[1]) - 1
+                            uv.append(T[2 * k]); uv.append(1.0 - T[2 * k + 1])  # glTF: origin at the top
+                        else:
+                            uv.append(0.0); uv.append(0.0)
+                        if len(parts) > 2 and parts[2]:
+                            k = int(parts[2]) - 1
+                            a, b, d = N[3 * k], N[3 * k + 1], N[3 * k + 2]
+                            ln = math.sqrt(a * a + b * b + d * d)
+                            if ln > 1e-12:
+                                nor.append(a / ln); nor.append(b / ln); nor.append(d / ln)
+                            else:
+                                nor.append(0.0); nor.append(1.0); nor.append(0.0)
+                        else:
+                            nor.append(0.0); nor.append(1.0); nor.append(0.0)
+                        i = len(pos) // 3 - 1
+                        local[tok] = i
+                    ids.append(i)
+                idx = prims.get(cur_mat)
+                if idx is None:
+                    idx = prims[cur_mat] = array.array("I")
+                    order.append(cur_mat)
+                for j in range(1, len(ids) - 1):          # fan (triangles here)
+                    idx.append(ids[0]); idx.append(ids[j]); idx.append(ids[j + 1])
+            elif line.startswith("usemtl "):
+                cur_mat = line.split(None, 1)[1].strip()
+                local = {}
+            elif c == "g " or c == "o ":
+                local = {}
+    del V, T, N, local
+
+    nv = len(pos) // 3
+    if nv == 0 or not order:
+        print("  [!] No geometry: .glb skipped.")
+        return False
+    if sys.byteorder != "little":
+        for a in [pos, uv, nor] + [prims[m] for m in order]:
+            a.byteswap()
+
+    # ---- buffer layout: positions, normals, uvs, then indices ------------
+    views, accessors, blobs = [], [], []
+    offset = 0
+
+    def add_view(arr, target):
+        nonlocal offset
+        n = len(arr) * arr.itemsize
+        views.append({"buffer": 0, "byteOffset": offset, "byteLength": n,
+                      "target": target})
+        blobs.append(arr)
+        offset += n                     # float32/uint32: stays 4-aligned
+        return len(views) - 1
+
+    mins = [min(pos[0::3]), min(pos[1::3]), min(pos[2::3])]
+    maxs = [max(pos[0::3]), max(pos[1::3]), max(pos[2::3])]
+    accessors.append({"bufferView": add_view(pos, 34962), "componentType": 5126,
+                      "count": nv, "type": "VEC3", "min": mins, "max": maxs})
+    accessors.append({"bufferView": add_view(nor, 34962), "componentType": 5126,
+                      "count": nv, "type": "VEC3"})
+    accessors.append({"bufferView": add_view(uv, 34962), "componentType": 5126,
+                      "count": nv, "type": "VEC2"})
+
+    images, textures, materials, primitives = [], [], [], []
+    mat_index = {}
+    for m in order:
+        if m is not None and m in mat_tex:
+            images.append({"uri": mat_tex[m].replace("\\", "/")})
+            textures.append({"sampler": 0, "source": len(images) - 1})
+            mat_index[m] = len(materials)
+            materials.append({"name": m,
+                              "pbrMetallicRoughness": {
+                                  "baseColorTexture": {"index": len(textures) - 1},
+                                  "metallicFactor": 0.0, "roughnessFactor": 1.0}})
+    for m in order:
+        idx = prims[m]
+        accessors.append({"bufferView": add_view(idx, 34963), "componentType": 5125,
+                          "count": len(idx), "type": "SCALAR"})
+        prim = {"attributes": {"POSITION": 0, "NORMAL": 1, "TEXCOORD_0": 2},
+                "indices": len(accessors) - 1, "mode": 4}
+        if m in mat_index:
+            prim["material"] = mat_index[m]
+        primitives.append(prim)
+
+    gltf = {
+        "asset": {"version": "2.0", "generator": "aioli-streetphere earth3d"},
+        "scene": 0, "scenes": [{"nodes": [0]}],
+        "nodes": [{"mesh": 0, "name": "earth3d"}],
+        "meshes": [{"name": "earth3d", "primitives": primitives}],
+        "buffers": [{"byteLength": offset}],
+        "bufferViews": views, "accessors": accessors,
+    }
+    if materials:
+        gltf.update({"materials": materials, "textures": textures, "images": images,
+                     "samplers": [{"magFilter": 9729, "minFilter": 9987,
+                                   "wrapS": 33071, "wrapT": 33071}]})
+
+    js = json.dumps(gltf, separators=(",", ":")).encode("utf-8")
+    js += b" " * (-len(js) % 4)
+    total = 12 + 8 + len(js) + 8 + offset
+    if total >= 2 ** 32:
+        print("  [!] Geometry too big for a .glb (4 GB limit): skipped.")
+        return False
+    with open(os.path.join(out_dir, "model_packed.glb"), "wb") as f:
+        f.write(struct.pack("<III", 0x46546C67, 2, total))
+        f.write(struct.pack("<II", len(js), 0x4E4F534A))
+        f.write(js)
+        f.write(struct.pack("<II", offset, 0x004E4942))
+        for a in blobs:
+            a.tofile(f)
+    print(f"  [OK] model_packed.glb : {nv} vertices, {len(materials)} material(s), "
+          f"{total / 1e6:.0f} MB (atlases referenced, keep them next to it).")
+    return True
+
+
+def cleanup_intermediate(out_dir):
+    """After a successful packing, offers to delete the multi-texture
+    version (model_local.* + the tile textures). Default: keep, because
+    repacking (another atlas count) needs it. Returns True if deleted."""
+    mtl = os.path.join(out_dir, "model_local.mtl")
+    files = [os.path.join(out_dir, "model_local.obj"), mtl]
+    if os.path.isfile(mtl):
+        with open(mtl, "r", encoding="utf-8", errors="replace") as f:
+            for line in f:
+                t = line.strip()
+                if t.startswith("map_Kd "):
+                    files.append(os.path.join(out_dir, t.split(None, 1)[1]))
+    files = [p for p in dict.fromkeys(files) if os.path.isfile(p)]
+    if not files:
+        return False
+    size = sum(os.path.getsize(p) for p in files)
+    print()
+    print(f"  Multi-texture version: model_local.* + {len(files) - 2} tile textures, "
+          f"{size / 1e9:.1f} GB.")
+    print("  Only needed to repack (other atlas count) without a new download.")
+    ans = input("  Delete it? [y / Enter = keep] : ").strip().lower()
+    if ans not in YES:
+        return False
+    for p in files:
+        try:
+            os.remove(p)
+        except OSError as ex:
+            print(f"  [!] Could not delete {os.path.basename(p)}: {ex}")
+    print(f"  [OK] {size / 1e9:.1f} GB freed.")
+    return True
+
+
 def write_clean_mtl(mtl_in, mtl_out):
     """Rewrites the .mtl in a minimal form (newmtl / Ka / Kd / map_Kd),
     easier to digest for the 3ds Max OBJ importer."""
@@ -826,7 +1037,9 @@ def process(raw):
     out_dir = os.path.join(OUT_DIR, name)
     if os.path.isdir(out_dir):
         shutil.rmtree(out_dir)
-    shutil.copytree(dump_dir, out_dir)
+    # moved, not copied: the dump is not kept twice on disk (v2.5.1)
+    os.makedirs(OUT_DIR, exist_ok=True)
+    shutil.move(dump_dir, out_dir)
 
     write_clean_mtl(os.path.join(out_dir, "model.mtl"),
                     os.path.join(out_dir, "model_local.mtl"))
@@ -835,13 +1048,28 @@ def process(raw):
                       os.path.join(out_dir, "model_local.obj"),
                       lat, lng, radius=radius)
 
+    if ok:
+        # the raw geocentric model is only a debug copy once recentred
+        for f in ("model.obj", "model.mtl"):
+            p = os.path.join(out_dir, f)
+            if os.path.isfile(p):
+                os.remove(p)
+
     packed = 0       # number of atlases (0 = not packed)
+    glb = cleaned = False
     if ok:
         print()
         ans = input("  Pack into a single object + texture atlas(es)? "
                     "[Enter = yes / n] : ").strip().lower()
         if ans not in ("n", "no", "non"):
             packed = pack_obj(out_dir)
+    if packed:
+        print()
+        ans = input("  Also export a .glb (Blender / Unreal, faster to import)? "
+                    "[Enter = yes / n] : ").strip().lower()
+        if ans not in ("n", "no", "non"):
+            glb = write_glb(out_dir)
+        cleaned = cleanup_intermediate(out_dir)
 
     print()
     print("=" * 62)
@@ -852,15 +1080,23 @@ def process(raw):
         else:
             print(f"    model_packed.obj -> 1 object, {packed} materials, "
                   f"atlas_XX.png  <-- import this one")
-        print(f"    model_local.obj  -> multi-texture (recentred, metres)")
+        if glb:
+            print(f"    model_packed.glb -> same, binary (Blender / Unreal), "
+                  f"next to its atlases")
+        if not cleaned:
+            print(f"    model_local.obj  -> multi-texture (recentred, metres)")
     else:
         print(f"    model_local.obj  -> recentred, metres  <-- import this one")
-    print(f"    model_local.mtl  -> cleaned-up materials (3ds Max friendly)")
-    print(f"    model.obj/.mtl   -> raw geocentric (debug)")
+    if not cleaned:
+        print(f"    model_local.mtl  -> cleaned-up materials (3ds Max friendly)")
+    if not ok:
+        print(f"    model.obj/.mtl   -> raw geocentric (debug)")
     print("=" * 62)
     print()
     best = "model_packed.obj" if packed else "model_local.obj"
     print(f"  Blender : File > Import > Wavefront (.obj) -> {best}.")
+    if glb:
+        print("            or File > Import > glTF 2.0 -> model_packed.glb.")
     print("            1 unit = 1 m.")
     print(f"  3ds Max : Import OBJ -> {best}, tick 'Import materials'.")
     if packed:
@@ -874,7 +1110,7 @@ def process(raw):
 def main():
     print()
     print("=" * 62)
-    print("  Earth 3D -> true-to-scale OBJ   (v2.5 experimental)")
+    print("  Earth 3D -> true-to-scale OBJ   (v2.5.1 experimental)")
     print("  [Q + Enter] to quit")
     print("=" * 62)
     print()

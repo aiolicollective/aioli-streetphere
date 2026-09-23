@@ -25,8 +25,11 @@ streetphere.
      the requested point (Google sphere convention, verified),
    - ground pinned to 0, east/north/altitude axes, standard Y-up OBJ convention,
    - **cropping to the radius**: faces outside the disc are removed (~15 m margin),
+   - normals rotated like the vertices (the dump's normals are geocentric),
    - the dump's `.bmp` textures (32-bit, not read properly by 3ds Max) are
      converted to `.png`, `.mtl` files cleaned up.
+   - The dump is **moved** (not copied) from `earth3d_vendor/` to `output/3d/`,
+     and the raw geocentric `model.obj` is deleted once recentred.
 6. Optional ([Enter] = yes): **packing** — the textures go into PNG atlas(es)
    (16,384 px ceiling each, anti-seam margins), UVs remapped. Small areas:
    one atlas, one material. When the textures no longer fit in one atlas, the
@@ -36,6 +39,17 @@ streetphere.
    Textures are loaded one at a time: RAM stays at about one atlas.
    Tiles stay in `g` groups (required so that the 3ds Max OBJ importer does not
    break the geometry).
+7. Optional ([Enter] = yes): **`.glb` export** of the packed model — same
+   geometry and materials, binary: about 3× lighter than the OBJ and much
+   faster to import in Blender or Unreal. The atlases are referenced, not
+   embedded: keep the `.glb` next to its `atlas_XX.png`. For 3ds Max, stay
+   on the OBJ.
+8. Optional ([Enter] = keep): delete the multi-texture version
+   (`model_local.*` + tile textures). It is only needed to repack with another
+   atlas count without downloading again.
+
+At the prompts that expect a number (detail, atlas count), `y` / `yes` also
+takes the suggestion, like [Enter].
 
 ## Output
 
@@ -43,8 +57,10 @@ streetphere.
 
 - `model_packed.obj` + `model_packed.mtl` + `atlas.png` — 1 material, 1 texture ← import this one
   (large areas: `atlas_01.png`, `atlas_02.png`… — 1 material per atlas)
+- `model_packed.glb` — same, binary (optional; Blender / Unreal)
 - `model_local.obj` + `model_local.mtl` + textures — multi-texture version
-- `model.obj` / `model.mtl` — raw geocentric (debug)
+  (unless deleted at the end)
+- `model.obj` / `model.mtl` — raw geocentric, kept only if recentring failed
 
 (360 spheres go to `output/spheres/` — outputs are kept consistent.)
 
@@ -61,8 +77,10 @@ First run: automatic clone + `npm install` (~1 min).
 
 ## Import
 
-- **Blender**: File > Import > Wavefront (.obj) → `model_packed.obj`.
+- **Blender**: File > Import > Wavefront (.obj) → `model_packed.obj`,
+  or File > Import > glTF 2.0 → `model_packed.glb` (faster).
   One single object, 1 unit = 1 m.
+- **Unreal**: import `model_packed.glb` (atlases in the same folder).
 - **3ds Max**: Import OBJ → `model_packed.obj`, tick "Import materials"
   **and "Import as single mesh"** (merges the groups into one object).
   The file is in metres: if your system units are centimetres, set the
@@ -84,7 +102,7 @@ nothing global.
 - Detail suggestion and atlas estimates are rules of thumb (each detail level
   ≈ 4× more tiles, reference: 3 km at detail 20 ≈ 54,000 tiles, 6.9 M vertices).
 - Large radii: the output folder holds the dump plus its processed copies,
-  count several GB to tens of GB on disk.
+  count several GB on disk (less if you delete the multi-texture version).
 - The mesh is kept on the curved Earth (true geometry): the edge of a 6 km
   radius sits ~2.8 m below the tangent plane of the centre, ~7.8 m at 10 km.
 - LOD: the maximum detail depends on the city's 3D coverage.
