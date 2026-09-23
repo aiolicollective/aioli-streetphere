@@ -19,9 +19,10 @@ Google, Google Maps, Street View and Google Earth are trademarks of Google LLC.
 - The tool is meant for **personal, educational or research use**
   (feasibility studies, working references, previsualisation).
   It grants no right to exploit the retrieved data commercially.
-- The 3D module relies on an **undocumented, unofficial protocol**. It may stop
-  working overnight, and using it may be at odds with the terms of service of
-  Google's products.
+- The 3D module relies on an **undocumented, unofficial protocol**, and the
+  satellite module on unofficial access to the Google Maps satellite tiles.
+  Both may stop working overnight, and using them may be at odds with the
+  terms of service of Google's products.
 - **It is up to each user to check what their jurisdiction and the applicable
   terms of service allow them to do.** The software is provided without warranty
   (see LICENSE): the authors cannot be held liable for how it is used.
@@ -38,7 +39,7 @@ route: the Google Photorealistic 3D Tiles API (Google Cloud account required).
 | [earth-reverse-engineering](https://github.com/retroplasma/earth-reverse-engineering) (retroplasma) | Reverse engineering of the Google Earth protocol and mesh exporter: the heart of the 3D module | **No license declared** by the author (therefore all rights reserved) | Cloned automatically into `earth3d_vendor/` on first run. Never copied nor redistributed here. |
 | [three.js](https://threejs.org) | Rendering of the 360 viewer (`builder.html`) | MIT | Loaded from a CDN on the viewer's first run |
 | [requests](https://requests.readthedocs.io) | HTTP requests | Apache-2.0 | Installed by `setup.bat` into the local venv |
-| [Pillow](https://python-pillow.org) | Tile stitching, texture conversion | MIT-CMU / HPND | Installed by `setup.bat` into the local venv |
+| [Pillow](https://python-pillow.org) | Tile stitching, texture conversion, satellite reprojection | MIT-CMU / HPND | Installed by `setup.bat` into the local venv |
 | [NumPy](https://numpy.org) | Spherical resampling (horizon levelling) | BSD-3-Clause | Installed by `setup.bat` into the local venv |
 
 Special thanks to **retroplasma**: without that reverse engineering work, the 3D
@@ -52,6 +53,7 @@ it as-is. If you reuse our code, keep it that way.
 |---|---|
 | Google Street View (`cbk0.google.com`, `lh3.googleusercontent.com`, `photometa` endpoint) | Panorama tiles and pose (heading / pitch / roll) |
 | Google Earth (`kh.google.com/rt/...`) | 3D mesh and textures, through the unofficial protocol above |
+| Google Maps satellite tiles (`mt0-3.google.com/vt`, `lyrs=s`) | Flat satellite imagery (satellite module) |
 
 No API key, no account, no payment bypass: the tool uses the same public
 endpoints as the browser does when you visit Google Maps.

@@ -22,7 +22,8 @@ echo.
 ::  missing is not a reason to stop the install -- option [1]
 ::  works without it -- so this only warns.
 echo  [i] The 3D module (menu options [2] and [3]) needs Node.js and Git.
-echo      The 360 sphere (option [1]) does NOT need them.
+echo      The 360 sphere and the satellite image (options [1] and [4])
+echo      do NOT need them.
 echo.
 node --version >nul 2>&1
 if errorlevel 1 (
@@ -153,11 +154,11 @@ echo  [3/3] Installation complete.
 echo.
 if defined MISSING_3D (
     echo  Reminder: Node.js and/or Git are still missing, so the 3D menu
-    echo  options [2] and [3] will refuse to start. Option [1] is ready.
+    echo  options [2] and [3] will refuse to start. Options [1] and [4] are ready.
     echo.
 )
 echo  To use the tool: double-click streetphere.bat
-echo    [1] 360 sphere   [2] 3D environment   [3] Both
+echo    [1] 360 sphere   [2] 3D environment   [3] Both   [4] Satellite image
 echo.
 set LAUNCH=
 set /p LAUNCH="  Open the menu now? [Enter = yes / n] > "

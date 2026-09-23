@@ -15,7 +15,9 @@ Two modes, detected automatically:
 - User photo sphere: direct download from the Google CDN
 
 Also includes a 3D module (textured, true-to-scale mesh of the surroundings —
-see below and EARTH3D.md).
+see below and EARTH3D.md) and a satellite module (flat satellite image of a
+square around a point, true to scale, lined up with the 3D mesh — see below
+and SATMAP.md).
 
 ---
 
@@ -124,7 +126,7 @@ installed — reinstalling with that box ticked is the cleaner fix.
 2. Switch to Street View somewhere you like
 3. Copy the full URL from the address bar
 4. Double-click streetphere.bat (or setup.bat the first time) and choose
-   [1] 360 sphere, [2] 3D environment, or [3] both
+   [1] 360 sphere, [2] 3D environment, [3] both, or [4] satellite image
 5. Paste the URL when the program asks for it and press Enter
 6. Choose the resolution level (Enter = zoom 4 by default)
 
@@ -168,7 +170,9 @@ the resolution is the original resolution of the photo.
   notice, and using it may be at odds with Google's terms of service.
   It is up to you to check what your own context allows.
 - Internet connection required: the script talks to Google servers.
-- Street View only: regular map or satellite links will not work.
+- The 360 sphere (option [1]) needs a Street View link: regular map or
+  satellite links will not work there. Options [2] and [4] take any Google
+  Maps link with a position, or `lat, lng`.
 - No API key required: this tool uses the same CDNs as the browser.
   No Google account is needed.
 
@@ -222,6 +226,32 @@ scale for Blender / 3ds Max.
 
 ---
 
+## Satellite module: satmap
+
+A flat satellite image of the square around a point (side = 2 x radius),
+north up, centred on the point, at a known scale in metres. It replaces
+screenshots of Google Maps, which lose resolution when you zoom out.
+
+- Run it: streetphere.bat, option [4] (needs the venv, not Node.js / Git)
+- Same URL / `lat, lng` input and same radius as the 3D module; the image
+  covers the whole square, corners included
+- Resolution: the zoom levels Google has at that spot, shown with the number
+  of tiles to download, a suggestion on [Enter]; never upscaled
+- Up to 16,384 px: one image at native resolution. Beyond: cut into N x N
+  equal pieces (no reduction), or reduced once to a single 16K image
+- Same frame as the 3D mesh: same point + same radius = the image lies
+  exactly under the mesh. Note: like the mesh, the scale follows the Google
+  Earth sphere, about 3 m per km off true ground distances (details in
+  SATMAP.md)
+- Optional textured OBJ plane(s), placed in the 3D frame: import and done
+- Output: output/sat/<prefix>/, e.g. wadirum_29p5770N_35p4200E_r6000_sat18/
+  (sat18 = satellite, zoom 18), each image named with the metres it covers
+  (<prefix>_12000m.jpg, or <prefix>_6000m_r1c1.jpg... for a grid) + a .txt
+  with sizes and positions
+- Full documentation: SATMAP.md
+
+---
+
 ## Companion tool: builder.html
 
 A standalone 360° viewer is included in the repo. Independent from the Python
@@ -264,21 +294,24 @@ rejected cleanly rather than rendered distorted.
 
     .
     +-- setup.bat                 Installation (venv + dependencies) -- run once
-    +-- streetphere.bat           The launcher: 360 sphere / 3D / both
+    +-- streetphere.bat           The launcher: 360 sphere / 3D / both / satellite
     +-- streetview.py             Equirectangular 360 sphere
     +-- earth3d.py                3D module: textured, true-to-scale mesh
     +-- both.py                   Combined mode: sphere + 3D from the same URL
+    +-- satmap.py                 Satellite module: flat image, true to scale
     +-- banner.py                 Intro screen (logo, links, credits)
     +-- earth3d_radius.js         3D helper: octant selection by radius
     +-- requirements.txt          Python libraries (requests, Pillow, numpy)
     +-- builder.html              360° viewer + standalone HTML exporter (independent)
     +-- EARTH3D.md                3D module documentation
+    +-- SATMAP.md                 Satellite module documentation
     +-- CREDITS.md                Sources, third-party licenses, disclaimer
     +-- LICENSE                   MIT (our code only)
     +-- venv/                     Created on first run, do not edit
     +-- earth3d_vendor/           Third-party exporter, cloned automatically (3D module)
     +-- output/spheres/           2:1 panoramas (+ intermediate tiles/)
     +-- output/3d/                3D environments (<prefix>_packed.obj/.glb + atlas)
+    +-- output/sat/               Satellite images (+ _cache/ of downloaded tiles)
 
 ---
 
